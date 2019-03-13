@@ -1,0 +1,19 @@
+20160713 mavis/perl/mavis_tacplus_radius.pl: RADIUS_DICTIONARY environment variable may be used to specify alternate RADIUS dictionary file
+20160730 tac_plus: Don't segfault for misconfigured log destinations
+20160730 tac_plus: "default group = ..." in host context sets group membership for users that don't have any. See the documentation for details.
+20160731 tac_plus: Issue a warning if default group is not found
+20160731 mavis/perl: rewrite hardcoded paths on install
+20161018 tac_plus: ACLs: switch realm comparision to aaa realm
+20161029 mavis/perl/mavis_tacplus_ldap.pl: Only request required LDAP attributes to speed up ldapsearch. Thanks to Garry Harthill <gazzerh@gmail.com>.
+20170414 mavis/perl/mavis_tacplus_ldap.pl: Unbreak "tacacs_scheme" mode by requesting the custom attributes, too.
+20170507 tac_plus: fix new logging code
+20170624 tac_plus: services that are ACL bound weren't evaluated correctly and basically didn't work
+20170802 tac_plus: introduce a default setting for "mavis user filter" to protect the mavis backend against potential injection attacks
+20170805 allow for evaluation of environmental variables in strings enclosed in double quotes
+20170809 tac_plus: ignore host realm when creating host-based group memberships
+20171019 tac_plus: fix member acl processing bug
+20171102 tac_plus: fix Apple LLVM 7.3.0 warnings
+20171104 tac_plus: if compiled without PCRE support: abort if PCRE syntax is detected
+20171217 scripts/install_ascii.pl: Switch to Getopt::Long to support multiple "-S" options. Thanks to Anton Castelli <ac14112@gmail.com>.
+20181129 tac_plus: fix packet checks (issue reported by Daniel Hartmeier <daniel@benzedrine.ch>
+
