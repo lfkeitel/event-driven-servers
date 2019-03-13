@@ -3,7 +3,7 @@
  * (C)2001-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: io_sched.c,v 1.57 2015/03/14 06:11:29 marc Exp marc $
+ * $Id: io_sched.c,v 1.58 2019/03/03 12:05:59 marc Exp $
  *
  */
 
@@ -31,7 +31,7 @@
 #include "mavis/log.h"
 #include "misc/memops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: io_sched.c,v 1.57 2015/03/14 06:11:29 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: io_sched.c,v 1.58 2019/03/03 12:05:59 marc Exp $";
 
 #ifdef WITH_KQUEUE
 #  include <sys/event.h>
@@ -1452,6 +1452,17 @@ static void port_io_destroy(struct io_context *io)
 }
 #endif
 
+static void insert_isc(rb_tree_t * t, struct io_sched *isc)
+{
+    while (!RB_insert(t, isc)) {
+	isc->time_when.tv_usec++;
+	if (isc->time_when.tv_usec > 1000000)
+	    isc->time_when.tv_usec -= 1000000, isc->time_when.tv_sec++;
+	isc->time_real.tv_sec = isc->time_when.tv_sec;
+	isc->time_real.tv_usec = isc->time_when.tv_usec;
+    }
+}
+
 void io_sched_add(struct io_context *io, void *data, void *proc, time_t tv_sec, suseconds_t tv_usec)
 {
     rb_node_t *rbn;
@@ -1485,7 +1496,7 @@ void io_sched_add(struct io_context *io, void *data, void *proc, time_t tv_sec, 
 	isc->time_when.tv_usec -= 1000000, isc->time_when.tv_sec++;
     isc->time_real.tv_sec = isc->time_when.tv_sec;
     isc->time_real.tv_usec = isc->time_when.tv_usec;
-    RB_insert(io->events_by_time, isc);
+    insert_isc(io->events_by_time, isc);
 }
 
 void io_sched_app(struct io_context *io, void *data, void *proc, time_t tv_sec, suseconds_t tv_usec)
@@ -1520,7 +1531,7 @@ void io_sched_app(struct io_context *io, void *data, void *proc, time_t tv_sec, 
 	isc->time_real.tv_sec = isc->time_when.tv_sec;
 	isc->time_real.tv_usec = isc->time_when.tv_usec;
 	RB_insert(io->events_by_data, isc);
-	RB_insert(io->events_by_time, isc);
+	insert_isc(io->events_by_time, isc);
     }
 
     DebugOut(DEBUG_PROC);
@@ -1550,7 +1561,7 @@ void *io_sched_pop(struct io_context *io, void *data)
 		isc->time_when.tv_usec -= 1000000, isc->time_when.tv_sec++;
 	    isc->time_real.tv_sec = isc->time_when.tv_sec;
 	    isc->time_real.tv_usec = isc->time_when.tv_usec;
-	    RB_insert(io->events_by_time, isc);
+	    insert_isc(io->events_by_time, isc);
 	    result = isc->event->proc;
 	} else {
 	    RB_delete(io->events_by_data, rbn);
@@ -1655,7 +1666,7 @@ static void io_reschedule(struct io_context *io)
 	    RB_delete(io->events_by_time, rbn);
 	    ios->time_when.tv_sec = ios->time_real.tv_sec;
 	    ios->time_when.tv_usec = ios->time_real.tv_usec;
-	    RB_insert(io->events_by_time, ios);
+	    insert_isc(io->events_by_time, ios);
 	    Debug((DEBUG_PROC, " rescheduled at %.8lx:%.8lx (%lds)\n",
 		   (long) (ios->time_when.tv_sec), (long) (ios->time_when.tv_usec), (long) (ios->time_when.tv_sec) - (long) io_now.tv_sec));
 	}

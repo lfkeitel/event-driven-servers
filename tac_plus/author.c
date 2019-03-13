@@ -58,7 +58,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.283 2016/06/06 17:15:24 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.284 2019/03/03 13:51:03 marc Exp marc $";
 
 struct author_data {
     char *server_msg;		/* user message (optional) */
@@ -134,6 +134,16 @@ void author(tac_session * session, tac_pak_hdr * hdr)
 	    for (i = arr_max; i > -1 && !arr[i]->orphan; i--);
 	    arr_min = i;
 
+	    for (i = arr_max; i > arr_min; i--)
+		if (arr[i]->username) {
+		    session->username_default = arr[i]->username;
+		    break;
+		}
+	    for (i = arr_max; i > arr_min; i--)
+		if (arr[i]->groupname) {
+		    session->groupname_default = arr[i]->groupname;
+		    break;
+		}
 	    get_revmap_nac(session, arr, arr_min, arr_max);
 	}
     }
