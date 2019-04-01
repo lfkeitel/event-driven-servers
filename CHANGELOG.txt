@@ -16,4 +16,5 @@
 20171104 tac_plus: if compiled without PCRE support: abort if PCRE syntax is detected
 20171217 scripts/install_ascii.pl: Switch to Getopt::Long to support multiple "-S" options. Thanks to Anton Castelli <ac14112@gmail.com>.
 20181129 tac_plus: fix packet checks (issue reported by Daniel Hartmeier <daniel@benzedrine.ch>
-
+20190331 make send/rcv buffer size for spawnd communication adjustable. Previous default was 65535, now set to system default.
+20190331 tac_plus: use non-default file number for spawnd communication to safeguard against spurious write, e.g. by libraries)

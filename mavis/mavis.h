@@ -3,7 +3,7 @@
  * (C)1998-2015 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: mavis.h,v 1.81 2015/10/04 07:33:22 marc Exp marc $
+ * $Id: mavis.h,v 1.82 2019/03/31 09:14:22 marc Exp marc $
  *
  */
 

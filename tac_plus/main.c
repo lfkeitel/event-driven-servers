@@ -49,7 +49,7 @@
 #include "misc/strops.h"
 #include "mavis/log.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.273 2016/06/06 17:15:25 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.274 2019/03/31 09:14:23 marc Exp marc $";
 
 struct config config;		/* configuration data */
 
@@ -66,7 +66,7 @@ static void cleanup_spawnd(struct context *ctx __attribute__ ((unused)), int cur
 {
     if (ctx_spawnd) {
 	ctx_spawnd = NULL;
-	io_close(ctx->io, 0);
+	io_close(ctx->io, ctx_spawnd->sock);
     }
 
     if (common_data.users_cur == 0 /*&& logs_flushed() FIXME */ ) {
@@ -143,16 +143,16 @@ static void periodics(struct context *ctx, int cur __attribute__ ((unused)))
 
     if (!die_when_idle && config.suicide && (config.suicide < io_now.tv_sec)) {
 	report(NULL, LOG_INFO, ~0, "Retire timeout is up. Told parent about this.");
-	common_data.scm_send_msg(0, &sd, -1);
+	common_data.scm_send_msg(ctx_spawnd->sock, &sd, -1);
 	die_when_idle = -1;
     }
 
     sd.type = SCM_KEEPALIVE;
-    if (!die_when_idle && common_data.scm_send_msg(0, &sd, -1))
+    if (!die_when_idle && common_data.scm_send_msg(ctx_spawnd->sock, &sd, -1))
 	die_when_idle = -1;
 
     if (common_data.users_cur == 0 && die_when_idle)
-	cleanup_spawnd(ctx, 0);
+	cleanup_spawnd(ctx, ctx_spawnd->sock);
 
     expire_dynamic_users();
 
@@ -260,13 +260,14 @@ int main(int argc, char **argv, char **envp)
 	setproctitle_init(argv, envp);
 	setup_signals();
 	ctx_spawnd = new_context(common_data.io, NULL);
-	ctx_spawnd->sock = 0;
-	io_register(common_data.io, 0, ctx_spawnd);
-	io_set_cb_i(common_data.io, 0, (void *) accept_control);
-	io_clr_cb_o(common_data.io, 0);
-	io_set_cb_h(common_data.io, 0, (void *) cleanup_spawnd);
-	io_set_cb_e(common_data.io, 0, (void *) cleanup_spawnd);
-	io_set_i(common_data.io, 0);
+	ctx_spawnd->sock = dup(0);
+	dup2(2, 0);
+	io_register(common_data.io, ctx_spawnd->sock, ctx_spawnd);
+	io_set_cb_i(common_data.io, ctx_spawnd->sock, (void *) accept_control);
+	io_clr_cb_o(common_data.io, ctx_spawnd->sock);
+	io_set_cb_h(common_data.io, ctx_spawnd->sock, (void *) cleanup_spawnd);
+	io_set_cb_e(common_data.io, ctx_spawnd->sock, (void *) cleanup_spawnd);
+	io_set_i(common_data.io, ctx_spawnd->sock);
     }
 
     if (getrlimit(RLIMIT_NOFILE, &rlim)) {
@@ -277,7 +278,7 @@ int main(int argc, char **argv, char **envp)
     nfds_max = (int) rlim.rlim_cur;
     sd.type = SCM_MAX;
     sd.max = nfds_max / 4;
-    common_data.scm_send_msg(0, (struct scm_data *) &sd, -1);
+    common_data.scm_send_msg(ctx_spawnd->sock, (struct scm_data *) &sd, -1);
 
     io_sched_add(common_data.io, new_context(common_data.io, NULL), (void *) periodics, 60, 0);
 
@@ -331,7 +332,7 @@ void cleanup(struct context *ctx, int cur)
     common_data.users_cur--;
 
     sd.type = SCM_DONE;
-    common_data.scm_send_msg(0, &sd, -1);
+    common_data.scm_send_msg(ctx_spawnd->sock, &sd, -1);
     set_proctitle(die_when_idle ? ACCEPT_NEVER : ACCEPT_YES);
 
     if (common_data.users_cur == 0 && die_when_idle)
@@ -384,7 +385,7 @@ static void accept_control_raw(int s, struct scm_data_accept *sd)
 	close(s);
 	report(NULL, LOG_DEBUG, DEBUG_PACKET_FLAG, "getpeername: %s", strerror(errno));
 	d.type = SCM_DONE;
-	common_data.scm_send_msg(0, &d, -1);
+	common_data.scm_send_msg(ctx_spawnd->sock, &d, -1);
 	return;
     }
     fcntl(s, F_SETFD, FD_CLOEXEC);
@@ -628,7 +629,7 @@ static void accept_control_raw(int s, struct scm_data_accept *sd)
 	    struct scm_data d;
 	    report(&session, LOG_INFO, ~0, "Retire limit reached. Told parent about this.");
 	    d.type = SCM_DYING;
-	    common_data.scm_send_msg(0, &d, -1);
+	    common_data.scm_send_msg(ctx_spawnd->sock, &d, -1);
 	}
     } else {
 	struct scm_data d;
@@ -644,7 +645,7 @@ static void accept_control_raw(int s, struct scm_data_accept *sd)
 	report(NULL, LOG_INFO, ~0, "session request from %s %srejected%s", f, rs, hint);
 
 	d.type = SCM_DONE;
-	common_data.scm_send_msg(0, &d, -1);
+	common_data.scm_send_msg(ctx_spawnd->sock, &d, -1);
     }
 }
 

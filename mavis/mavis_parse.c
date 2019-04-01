@@ -96,7 +96,7 @@
 #include "spawnd_headers.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.171 2017/12/19 06:28:21 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.173 2019/03/30 14:57:51 marc Exp $";
 
 struct common_data common_data;
 

@@ -195,6 +195,10 @@ acl accept ::1
           + tcp keepalive ( count | idle | interval ) = Number
             Sets various options for TCP keepalive probes, if
             supported by the operating system.
+          + tcp bufsize Number
+            Overrides the system default input/output buffer sizes
+            (SO_SNDBUF, SO_RCVBUF) for communication with child
+            processes.
        The listen directive is mandatory unless the daemon is
        started via an inetd(8) (or compatible) process, in which
        case

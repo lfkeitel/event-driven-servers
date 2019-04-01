@@ -11,13 +11,13 @@
  *   ISBN 0-07-013143-0 (McGraw-Hill)
  *
  *
- * $Id: rb.c,v 1.27 2015/03/14 06:11:30 marc Exp marc $
+ * $Id: rb.c,v 1.30 2019/03/17 08:57:45 marc Exp marc $
  *
  */
 
 #include "misc/sysconf.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: rb.c,v 1.27 2015/03/14 06:11:30 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: rb.c,v 1.30 2019/03/17 08:57:45 marc Exp marc $";
 
 #include <stdio.h>
 #include <sys/types.h>
@@ -418,9 +418,17 @@ void RB_delete(rb_tree_t * T, rb_node_t * z)
 rb_node_t *RB_search(rb_tree_t * T, void *payload)
 {
     rb_node_t *x = T->root;
+    int count = 0;
 
     while (x != rb_nil) {
 	int i = T->compare(payload, x->payload);
+#if 1				//#ifdef DEBUG_RB
+	if (count++ > T->count) {
+	    fprintf(stderr, "RB_search: possible loop detected, returning NULL\n");
+	    return NULL;
+	}
+#endif
+
 	if (i < 0)
 	    x = x->left;
 	else if (i > 0)

@@ -56,7 +56,7 @@
    FITNESS FOR A PARTICULAR PURPOSE.
 */
 
-/* $Id: headers.h,v 1.413 2016/07/03 06:32:46 marc Exp marc $ */
+/* $Id: headers.h,v 1.414 2019/03/31 09:14:23 marc Exp marc $ */
 
 #ifndef __HEADERS_H_
 #define __HEADERS_H_
@@ -155,7 +155,7 @@ typedef struct {
     char *reject_banner;
     char *authfail_banner;
     char *username;		/* default user name */
-    char *groupname;	/* default group for users not in any group */
+    char *groupname;		/* default group for users not in any group */
     char *follow;		/* alternate daemon */
     struct pwdat *enable[TAC_PLUS_PRIV_LVL_MAX + 1];	/* enable passwords */
     char enable_implied[TAC_PLUS_PRIV_LVL_MAX + 1];

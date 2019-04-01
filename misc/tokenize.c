@@ -2,7 +2,7 @@
  * tokenize.c (C) 2000-2011 Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: tokenize.c,v 1.6 2011/02/27 12:22:15 marc Exp $
+ * $Id: tokenize.c,v 1.8 2019/03/30 14:57:52 marc Exp $
  *
  */
 

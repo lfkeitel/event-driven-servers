@@ -3,7 +3,7 @@
  * (C) 1999-2011 Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: set_proctitle.c,v 1.12 2015/03/14 06:11:28 marc Exp $
+ * $Id: set_proctitle.c,v 1.14 2019/03/30 14:57:51 marc Exp $
  *
  */
 
@@ -11,7 +11,7 @@
 #include "set_proctitle.h"
 #include "spawnd_headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: set_proctitle.c,v 1.12 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: set_proctitle.c,v 1.14 2019/03/30 14:57:51 marc Exp $";
 
 void set_proctitle(int status)
 {

@@ -371,4 +371,5 @@ destination	S_destination
 RFC3164		S_RFC3164
 RFC5424		S_RFC5424
 group-membership	S_groupmembership
+bufsize		S_bufsize
 

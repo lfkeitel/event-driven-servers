@@ -77,6 +77,7 @@ enum token {
 	S_blacklist,
 	S_blowfish,
 	S_buffer,
+	S_bufsize,
 	S_bye,
 	S_cafile,
 	S_capath,

@@ -2,7 +2,7 @@
  * spawnd_main.c
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: spawnd_main.c,v 1.90 2015/03/14 06:11:28 marc Exp $
+ * $Id: spawnd_main.c,v 1.93 2019/03/31 09:14:23 marc Exp marc $
  *
  */
 
@@ -26,7 +26,7 @@
 #  include <sys/sysctl.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_main.c,v 1.90 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_main.c,v 1.93 2019/03/31 09:14:23 marc Exp marc $";
 
 struct spawnd_data spawnd_data;	/* configuration data */
 
@@ -133,8 +133,9 @@ void get_exec_path(char **path, char *dflt)
     if (rls < 0)
 	rls = readlink("/proc/curproc/file", tmp, sizeof(tmp));
     if (rls < 0) {
-	snprintf(tmp, sizeof(tmp), "/proc/%lu/exe", (u_long) getpid());
-	rls = readlink(tmp, tmp, sizeof(tmp));
+	char ptmp[PATH_MAX];
+	snprintf(ptmp, sizeof(ptmp), "/proc/%lu/exe", (u_long) getpid());
+	rls = readlink(ptmp, tmp, sizeof(tmp));
     }
     if (rls > 0) {
 	tmp[rls] = 0;
@@ -323,6 +324,7 @@ int spawnd_main(int argc, char **argv, char **envp, char *id)
     spawnd_data.keepintvl = -1;
     spawnd_data.keepcnt = -1;
     spawnd_data.keepidle = -1;
+    spawnd_data.scm_bufsize = 0;	// leave at system default
 
     if (!getsockopt(0, SOL_SOCKET, SO_TYPE, &socktype, &socktypelen))
 	switch (socktype) {

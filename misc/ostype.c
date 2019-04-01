@@ -3,7 +3,7 @@
  * (C) 2001 Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: ostype.c,v 1.6 2015/03/14 06:11:29 marc Exp marc $
+ * $Id: ostype.c,v 1.7 2019/03/30 12:32:44 marc Exp $
  *
  */
 
@@ -15,14 +15,14 @@
 #include <ctype.h>
 #include <sys/utsname.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: ostype.c,v 1.6 2015/03/14 06:11:29 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: ostype.c,v 1.7 2019/03/30 12:32:44 marc Exp $";
 
 static char *os = NULL;
 
 char *ostype()
 {
     if (!os) {
-	char b[80], *t;
+	char b[1024], *t;
 	struct utsname buf;
 	uname(&buf);
 	snprintf(b, sizeof(b), "%s-%s-%s", buf.sysname, buf.release, buf.machine);

@@ -77,6 +77,7 @@ char *codestring[] = {
 	"blacklist",
 	"blowfish",
 	"buffer",
+	"bufsize",
 	"bye",
 	"ca-file",
 	"ca-path",

@@ -4,7 +4,7 @@
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: spawnd_headers.h,v 1.33 2013/02/01 13:33:17 marc Exp marc $
+ * $Id: spawnd_headers.h,v 1.34 2019/03/31 09:14:23 marc Exp marc $
  *
  */
 
@@ -77,6 +77,7 @@ struct spawnd_data {
     int keepcnt;
     int keepidle;
     int keepintvl;
+    int scm_bufsize;
 };
 
 struct spawnd_context {

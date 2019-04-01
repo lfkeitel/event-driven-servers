@@ -59,7 +59,7 @@
 #include "headers.h"
 #include "misc/mymd5.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.137 2016/06/06 17:15:25 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.137 2016/06/06 17:15:25 marc Exp $";
 
 static void write_packet(struct context *, tac_pak *);
 static tac_session *new_session(struct context *, tac_pak_hdr *);

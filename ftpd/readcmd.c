@@ -3,7 +3,7 @@
  * (C)1997-2011 Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  * 
- * $Id: readcmd.c,v 1.13 2015/03/14 06:11:27 marc Exp marc $
+ * $Id: readcmd.c,v 1.14 2019/03/30 14:57:51 marc Exp $
  *
  */
 
@@ -16,7 +16,7 @@
 #include "headers.h"
 #include <arpa/telnet.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: readcmd.c,v 1.13 2015/03/14 06:11:27 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: readcmd.c,v 1.14 2019/03/30 14:57:51 marc Exp $";
 
 static void parsecmd(struct context *, int);
 
@@ -155,7 +155,6 @@ static void parsecmd(struct context *ctx, int cfn)
 		DebugOut(DEBUG_PROC);
 		return;
 	    }
-	    /* fall through */
 	default:
 	    lastchar = *u++ = *t;
 	}

@@ -3,7 +3,7 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: spawnd_conf.c,v 1.59 2015/03/14 06:11:28 marc Exp $
+ * $Id: spawnd_conf.c,v 1.60 2019/03/31 09:14:23 marc Exp marc $
  *
  */
 
@@ -18,7 +18,7 @@
 #include <netdb.h>
 #include "misc/radix.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_conf.c,v 1.59 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_conf.c,v 1.60 2019/03/31 09:14:23 marc Exp marc $";
 
 struct acl {
     struct acl *next;
@@ -266,27 +266,38 @@ void spawnd_parse_decls(struct sym *sym)
 	    continue;
 	case S_tcp:
 	    sym_get(sym);
-	    parse(sym, S_keepalive);
 	    switch (sym->code) {
-	    case S_count:
+	    case S_keepalive:
+		sym_get(sym);
+		switch (sym->code) {
+		case S_count:
+		    sym_get(sym);
+		    parse(sym, S_equal);
+		    spawnd_data.keepcnt = parse_int(sym);
+		    break;
+		case S_idle:
+		    sym_get(sym);
+		    parse(sym, S_equal);
+		    spawnd_data.keepidle = parse_int(sym);
+		    break;
+		case S_interval:
+		    sym_get(sym);
+		    parse(sym, S_equal);
+		    spawnd_data.keepintvl = parse_int(sym);
+		    break;
+		default:
+		    parse_error_expect(sym, S_count, S_idle, S_interval, S_unknown);
+		}
+		continue;
+	    case S_bufsize:
 		sym_get(sym);
 		parse(sym, S_equal);
-		spawnd_data.keepcnt = parse_int(sym);
-		break;
-	    case S_idle:
-		sym_get(sym);
-		parse(sym, S_equal);
-		spawnd_data.keepidle = parse_int(sym);
-		break;
-	    case S_interval:
-		sym_get(sym);
-		parse(sym, S_equal);
-		spawnd_data.keepintvl = parse_int(sym);
+		spawnd_data.scm_bufsize = parse_int(sym);
 		break;
 	    default:
-		parse_error_expect(sym, S_count, S_idle, S_interval, S_unknown);
+		parse_error_expect(sym, S_bufsize, S_keepalive, S_unknown);
 	    }
-	    break;
+	    continue;
 	case S_pidfile:
 	case S_pid_file:
 	    sym_get(sym);

@@ -17,7 +17,7 @@
 #include <unistd.h>
 #include <sysexits.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_scm_spawn.c,v 1.26 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_scm_spawn.c,v 1.27 2019/03/31 09:14:23 marc Exp marc $";
 
 void spawnd_cleanup_internal(struct spawnd_context *ctx, int fd __attribute__ ((unused)))
 {
@@ -48,7 +48,7 @@ int spawnd_spawn_child(pid_t * pidp)
     int socks[2];
     pid_t pid;
     int flags;
-    int bufsize = 65535;
+    int bufsize = spawnd_data.scm_bufsize;
     int one = 1;
     char *argv[10];
     int i = 0;
@@ -81,8 +81,10 @@ int spawnd_spawn_child(pid_t * pidp)
 	close(socks[0]);
 	dup2(socks[1], 0);
 	close(socks[1]);
-	setsockopt(0, SOL_SOCKET, SO_SNDBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
-	setsockopt(0, SOL_SOCKET, SO_RCVBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
+	if (bufsize) {
+	    setsockopt(0, SOL_SOCKET, SO_SNDBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
+	    setsockopt(0, SOL_SOCKET, SO_RCVBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
+	}
 	setsockopt(0, SOL_SOCKET, SO_KEEPALIVE, (char *) &one, (socklen_t) sizeof(one));
 
 	if (common_data.parse_only)
@@ -114,8 +116,10 @@ int spawnd_spawn_child(pid_t * pidp)
 	close(socks[1]);
 	flags = fcntl(socks[0], F_GETFD, 0) | FD_CLOEXEC;
 	fcntl(socks[0], F_SETFD, flags);
-	setsockopt(socks[0], SOL_SOCKET, SO_SNDBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
-	setsockopt(socks[0], SOL_SOCKET, SO_RCVBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
+	if (bufsize) {
+	    setsockopt(socks[0], SOL_SOCKET, SO_SNDBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
+	    setsockopt(socks[0], SOL_SOCKET, SO_RCVBUF, (char *) &bufsize, (socklen_t) sizeof(bufsize));
+	}
 	setsockopt(socks[0], SOL_SOCKET, SO_KEEPALIVE, (char *) &one, (socklen_t) sizeof(one));
 	if (pidp)
 	    *pidp = pid;
@@ -171,7 +175,10 @@ static void recv_childmsg(struct spawnd_context *ctx, int cur)
 		set_proctitle(ACCEPT);
 	    }
 	    break;
-	default:;
+	case SCM_KEEPALIVE:
+	    break;
+	default:
+	    logmsg("Child used unknown message type %d", (int) sd.type);
 	}
 }
 

@@ -16,7 +16,7 @@
 struct io_dns_item {
     void *app_cb;
     void *app_ctx;
-    lwres_uint32_t serial;
+    uint32_t serial;
 };
 
 struct io_dns_ctx {
@@ -140,7 +140,7 @@ void io_dns_add(struct io_dns_ctx *idc, sockaddr_union * su, void *app_cb, void 
     lwres_gnbarequest_t req;
     lwres_lwpacket_t pkt;
     lwres_buffer_t b;
-    lwres_uint32_t serial;
+    uint32_t serial;
 
     b.base = NULL;
 
