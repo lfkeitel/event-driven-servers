@@ -49,7 +49,7 @@
 #include "misc/strops.h"
 #include "mavis/log.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.274 2019/03/31 09:14:23 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.275 2019/04/17 16:28:29 marc Exp marc $";
 
 struct config config;		/* configuration data */
 
@@ -65,8 +65,8 @@ static struct context *ctx_spawnd = NULL;
 static void cleanup_spawnd(struct context *ctx __attribute__ ((unused)), int cur __attribute__ ((unused)))
 {
     if (ctx_spawnd) {
-	ctx_spawnd = NULL;
 	io_close(ctx->io, ctx_spawnd->sock);
+	ctx_spawnd = NULL;
     }
 
     if (common_data.users_cur == 0 /*&& logs_flushed() FIXME */ ) {
