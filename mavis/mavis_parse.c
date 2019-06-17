@@ -96,7 +96,7 @@
 #include "spawnd_headers.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.173 2019/03/30 14:57:51 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.174 2019/06/07 17:17:08 marc Exp marc $";
 
 struct common_data common_data;
 
@@ -933,7 +933,7 @@ int cfg_open_and_read(char *url, char **buf, int *buflen)
     return -1;
 }
 
-int cfg_close(char *url, char *buf, int buflen)
+int cfg_close(char *url __attribute__ ((unused)), char *buf, int buflen)
 {
     int cfgloc = CFG_FILE;
 

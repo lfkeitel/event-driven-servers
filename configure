@@ -7,12 +7,12 @@
 # (C) 2002-2011 by Marc Huber <Marc.Huber@web.de>
 # All rights reserved.
 #
-# $Id: configure,v 1.63 2011/09/24 18:49:41 marc Exp marc $
+# $Id: configure,v 1.64 2019/06/07 17:40:43 marc Exp marc $
 #
 
 use strict;
 
-my ($sysname, $release, $machine, $cwd);
+my ($sysname, $release, $machine, $arch, $cwd);
 
 if (eval("require POSIX")) {
 	($sysname, undef, $release, undef, $machine) = POSIX::uname();
@@ -25,6 +25,8 @@ if (eval("require POSIX")) {
 	$cwd = `pwd`;
 	chomp ($sysname, $release, $machine, $cwd);
 }
+$arch = `uname -i`;
+chomp ($arch);
 
 $sysname =~ tr/ \//--/;
 $machine =~ tr/ \//--/;
@@ -38,6 +40,7 @@ $release = lc $release;
 my $LIBARCH = undef;
 
 $LIBARCH = "64" if $sysname =~ /linux/i && $machine =~ /64/ && -d "/usr/lib64";
+$LIBARCH = "/$arch-linux-gnu" if -d "/usr/lib/$arch-linux-gnu"; # FIXME
 # FIXME: Might use "getconf LONG_BIT" instead.
 
 my $aux = "";

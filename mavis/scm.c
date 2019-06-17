@@ -4,13 +4,14 @@
  * UNIX domain socket interface for spawnd compliant applications
  * (C)2000-2011 Marc Huber <Marc.Huber@web.de>
  *
- * $Id: scm.c,v 1.3 2015/03/14 06:11:28 marc Exp $
+ * $Id: scm.c,v 1.4 2019/05/01 17:47:51 marc Exp marc $
  *
  */
 
 #define __SCM_C__
 #include "misc/sysconf.h"
 #include "misc/memops.h"
+#include "log.h"
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,10 +19,11 @@
 #include <sys/un.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "mavis/mavis.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: scm.c,v 1.3 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: scm.c,v 1.4 2019/05/01 17:47:51 marc Exp marc $";
 
 int scm_send_msg(int sock, struct scm_data *sd, int fd)
 {
@@ -29,6 +31,7 @@ int scm_send_msg(int sock, struct scm_data *sd, int fd)
     struct msghdr msg;
     struct cmsghdr *cmsg;
     char buf[CMSG_SPACE(sizeof(int))] __attribute__ ((aligned(8)));
+    int res;
 
     vector.iov_base = sd;
     switch (sd->type) {
@@ -66,7 +69,10 @@ int scm_send_msg(int sock, struct scm_data *sd, int fd)
 #define MSG_NOSIGNAL 0
 #endif				/* MSG_NOSIGNAL */
 
-    return (sendmsg(sock, &msg, MSG_NOSIGNAL) != (ssize_t) vector.iov_len);
+    res = sendmsg(sock, &msg, MSG_NOSIGNAL);
+    if (res < 0)
+	logmsg("scm_send_msg: sendmsg: %s", strerror(errno));
+    return (res != (ssize_t) vector.iov_len);
 }
 
 int scm_recv_msg(int sock, struct scm_data_accept *sd, size_t sd_len, int *fd)
@@ -75,6 +81,7 @@ int scm_recv_msg(int sock, struct scm_data_accept *sd, size_t sd_len, int *fd)
     struct msghdr msg;
     struct cmsghdr *cmsg;
     char buf[CMSG_SPACE(sizeof(int))] __attribute__ ((aligned(8)));
+    int res;
 
     if (fd)
 	*fd = -1;
@@ -90,13 +97,16 @@ int scm_recv_msg(int sock, struct scm_data_accept *sd, size_t sd_len, int *fd)
     cmsg->cmsg_len = CMSG_LEN(sizeof(int));
     msg.msg_control = (caddr_t) cmsg;
 
-    if (0 < recvmsg(sock, &msg, 0)) {
+    res = recvmsg(sock, &msg, 0);
+    if (0 < res) {
 	if (sd->type == SCM_ACCEPT) {
 	    struct cmsghdr *chdr = CMSG_FIRSTHDR(&msg);
 	    memcpy(fd, CMSG_DATA(chdr), sizeof(int));
 	}
 	return 0;
     }
+    if (res < 0)
+	logmsg("scm_recv_msg: recvmsg: %s", strerror(errno));
     return -1;
 }
 

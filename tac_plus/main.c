@@ -49,7 +49,7 @@
 #include "misc/strops.h"
 #include "mavis/log.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.275 2019/04/17 16:28:29 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.277 2019/05/29 10:09:33 marc Exp marc $";
 
 struct config config;		/* configuration data */
 
@@ -148,11 +148,11 @@ static void periodics(struct context *ctx, int cur __attribute__ ((unused)))
     }
 
     sd.type = SCM_KEEPALIVE;
-    if (!die_when_idle && common_data.scm_send_msg(ctx_spawnd->sock, &sd, -1))
+    if (ctx_spawnd && !die_when_idle && common_data.scm_send_msg(ctx_spawnd->sock, &sd, -1))
 	die_when_idle = -1;
 
     if (common_data.users_cur == 0 && die_when_idle)
-	cleanup_spawnd(ctx, ctx_spawnd->sock);
+	cleanup_spawnd(ctx, -1 /* unused */);
 
     expire_dynamic_users();
 
@@ -179,9 +179,9 @@ static void periodics_ctx(struct context *ctx, int cur __attribute__ ((unused)))
     for (rbn = RB_first(ctx->sessions); rbn; rbn = rbnext) {
 	tac_session *s = RB_payload(rbn, tac_session *);
 	rbnext = RB_next(rbn);
-
 	if (s->timeout < io_now.tv_sec)
 	    cleanup_session(s);
+
     }
 
     tac_script_expire_exec_context(ctx);
@@ -278,7 +278,8 @@ int main(int argc, char **argv, char **envp)
     nfds_max = (int) rlim.rlim_cur;
     sd.type = SCM_MAX;
     sd.max = nfds_max / 4;
-    common_data.scm_send_msg(ctx_spawnd->sock, (struct scm_data *) &sd, -1);
+    if (ctx_spawnd)
+	common_data.scm_send_msg(ctx_spawnd->sock, (struct scm_data *) &sd, -1);
 
     io_sched_add(common_data.io, new_context(common_data.io, NULL), (void *) periodics, 60, 0);
 
@@ -332,10 +333,11 @@ void cleanup(struct context *ctx, int cur)
     common_data.users_cur--;
 
     sd.type = SCM_DONE;
-    common_data.scm_send_msg(ctx_spawnd->sock, &sd, -1);
+    if (ctx_spawnd)
+	common_data.scm_send_msg(ctx_spawnd->sock, &sd, -1);
     set_proctitle(die_when_idle ? ACCEPT_NEVER : ACCEPT_YES);
 
-    if (common_data.users_cur == 0 && die_when_idle)
+    if (ctx_spawnd && common_data.users_cur == 0 && die_when_idle)
 	cleanup(ctx_spawnd, 0);
 }
 
@@ -344,7 +346,8 @@ void catchhup(int i __attribute__ ((unused)))
     signal(SIGHUP, SIG_IGN);
     signal(SIGTERM, SIG_IGN);
 
-    cleanup(ctx_spawnd, 0);
+    if (ctx_spawnd)
+	cleanup(ctx_spawnd, 0);
     die_when_idle = -1;
     report(NULL, LOG_INFO, ~0, "SIGHUP: No longer accepting new connections.");
 }

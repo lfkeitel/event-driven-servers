@@ -73,7 +73,7 @@
 # include <openssl/des.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.380 2016/06/06 17:15:24 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.381 2019/06/08 06:20:13 marc Exp marc $";
 
 struct authen_data {
     u_char *data;

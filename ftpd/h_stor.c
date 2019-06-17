@@ -3,14 +3,14 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: h_stor.c,v 1.15 2015/03/14 06:11:26 marc Exp marc $
+ * $Id: h_stor.c,v 1.16 2019/06/07 17:15:54 marc Exp marc $
  *
  */
 
 #include "headers.h"
 #include "misc/base64.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: h_stor.c,v 1.15 2015/03/14 06:11:26 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: h_stor.c,v 1.16 2019/06/07 17:15:54 marc Exp marc $";
 
 static void skipbytes(struct context *ctx, int cur __attribute__ ((unused)))
 {
@@ -108,7 +108,7 @@ static void h_xstor(struct context *ctx, char *arg, int flags)
     int f = -1;
     struct stat st;
     int stou = 0;
-    char tbuf[PATH_MAX + 1];
+    char tbuf[PATH_MAX + 13];
 
     DebugIn(DEBUG_COMMAND);
 

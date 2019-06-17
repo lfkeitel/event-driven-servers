@@ -59,7 +59,7 @@
 #include "headers.h"
 #include "misc/mymd5.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.137 2016/06/06 17:15:25 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.138 2019/06/08 06:28:25 marc Exp marc $";
 
 static void write_packet(struct context *, tac_pak *);
 static tac_session *new_session(struct context *, tac_pak_hdr *);
@@ -579,7 +579,7 @@ void cleanup_session(tac_session * session)
 
     s.session_id = session->session_id;
     RB_search_and_delete(ctx->sessions, &s);
-    if (session->mavis_pending)
+    if (session->mavis_pending && session->mavis_realm && session->mavis_realm->mcx)
 	mavis_cancel(session->mavis_realm->mcx, session);
 #ifdef WITH_LWRES
     if (session->revmap_pending) {

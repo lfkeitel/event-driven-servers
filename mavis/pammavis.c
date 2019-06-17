@@ -1,7 +1,7 @@
 /*
  * pammavis [ -s service ]
  *
- * $Id: pammavis.c,v 1.24 2016/02/15 18:35:11 marc Exp marc $
+ * $Id: pammavis.c,v 1.25 2019/06/10 07:12:12 marc Exp marc $
  */
 
 #include "misc/sysconf.h"
@@ -128,28 +128,17 @@ int main(int argc, char **argv)
     while (fgets(buf, sizeof(buf), stdin)) {
 	int mavis_attr;
 	char mavis_val[4096];
-	if (2 == sscanf(buf, "%d %s\n", &mavis_attr, mavis_val)) {
+	if (2 == sscanf(buf, "%d%[^\n]\n", &mavis_attr, mavis_val) && *mavis_val) {
 	    printf("%s", buf);
 	    switch (mavis_attr) {
 	    case AV_A_USER:
-		user = strdup(mavis_val);
+		user = strdup(mavis_val + 1);
 		break;
 	    case AV_A_PASSWORD:
-		pass = strdup(mavis_val);
+		pass = strdup(mavis_val + 1);
 		break;
 	    case AV_A_TACTYPE:
 		tact_info = !strcmp(mavis_val, AV_V_TACTYPE_INFO);
-		break;
-	    default:;
-	    }
-	} else if (1 == sscanf(buf, "%d \n", &mavis_attr)) {
-	    printf("%s", buf);
-	    switch (mavis_attr) {
-	    case AV_A_USER:
-		user = strdup("");
-		break;
-	    case AV_A_PASSWORD:
-		pass = strdup("");
 		break;
 	    default:;
 	    }
