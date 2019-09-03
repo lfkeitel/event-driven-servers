@@ -7,7 +7,7 @@
 # (C) 2002-2011 by Marc Huber <Marc.Huber@web.de>
 # All rights reserved.
 #
-# $Id: configure,v 1.64 2019/06/07 17:40:43 marc Exp marc $
+# $Id: configure,v 1.67 2019/06/14 19:20:25 marc Exp marc $
 #
 
 use strict;
@@ -40,8 +40,6 @@ $release = lc $release;
 my $LIBARCH = undef;
 
 $LIBARCH = "64" if $sysname =~ /linux/i && $machine =~ /64/ && -d "/usr/lib64";
-$LIBARCH = "/$arch-linux-gnu" if -d "/usr/lib/$arch-linux-gnu"; # FIXME
-# FIXME: Might use "getconf LONG_BIT" instead.
 
 my $aux = "";
 
@@ -61,7 +59,7 @@ my $doc = "share/mavis";
 $COMMENT{"devpoll"} =
 "This option enables /dev/poll support. You may use it on Linux
 with /dev/poll patch (untested), or on a sufficiently recent Sun
-Solaris 7 system.";
+Solaris system (7 onwards).";
 
 $COMMENT{"epoll"} =
 "Usually, Linux epoll support is autodetected. This option overrides
@@ -200,27 +198,27 @@ $A{"--debug"} = 0;
 
 while ($#ARGV > -1)
 {
-		$ARGV[0] =~ s/-tls/-ssl/;
+	$ARGV[0] =~ s/-tls/-ssl/;
 
-		if ($ARGV[0] =~ /^(--[^=]+)=(.*)$/)
-		{
-				$A{$1} = $2;
-		}
-		elsif ($ARGV[0] =~ /^--([^-]+-[^-]+|debug)$/)
-		{
-				$A{$ARGV[0]} = "1";
-		}
-		elsif ($ARGV[0] =~ /^--[^-]+-[^-]+-[^-]+$/)
-		{
-				$A{$ARGV[0]} = $ARGV[1];
-				shift @ARGV;
-		}
-		else
-		{
-				$A{$ARGV[0]} = undef;
-		}
-
+	if ($ARGV[0] =~ /^(--[^=]+)=(.*)$/)
+	{
+		$A{$1} = $2;
+	}
+	elsif ($ARGV[0] =~ /^--([^-]+-[^-]+|debug)$/)
+	{
+		$A{$ARGV[0]} = "1";
+	}
+	elsif ($ARGV[0] =~ /^--[^-]+-[^-]+-[^-]+$/)
+	{
+		$A{$ARGV[0]} = $ARGV[1];
 		shift @ARGV;
+	}
+	else
+	{
+		$A{$ARGV[0]} = undef;
+	}
+
+	shift @ARGV;
 }
 
 my $a;
@@ -229,37 +227,37 @@ my $DIRS = "";
 
 foreach $a (keys %A)
 {
-		if ($a =~ /^--with-([^-]+)-include$/)
-		{
-				$A{"--with-$1"} = "1" unless exists $A{"--with-$1"};
+	if ($a =~ /^--with-([^-]+)-include$/)
+	{
+		$A{"--with-$1"} = "1" unless exists $A{"--with-$1"};
 
-				unless (exists $A{"--with-$1-lib"})
-				{
-						$A{"--with-$1-lib"} = $A{"--with-$1-include"};
-						$A{"--with-$1-lib"} =~ s/include$/lib/;
-				}
-		}
-		elsif ($a =~ /^--with-([^-]+)-lib$/)
+		unless (exists $A{"--with-$1-lib"})
 		{
-				$A{"--with-$1"} = "1" unless exists $A{"--with-$1"};
+			$A{"--with-$1-lib"} = $A{"--with-$1-include"};
+			$A{"--with-$1-lib"} =~ s/include$/lib/;
+		}
+	}
+	elsif ($a =~ /^--with-([^-]+)-lib$/)
+	{
+		$A{"--with-$1"} = "1" unless exists $A{"--with-$1"};
 
-				unless (exists $A{"--with-$1-include"})
-				{
-						$A{"--with-$1-include"} = $A{"--with-$1-lib"};
-						$A{"--with-$1-include"} =~ s/lib$/include/;
-				}
-		}
-		elsif ($a =~ /^--without-([^-]+)$/)
+		unless (exists $A{"--with-$1-include"})
 		{
-				$A{"--with-$1"} = "0";
-				delete $A{$a};
-		} elsif ($a =~ /^mavis$/) {
-				$DIRS = "$a$DIRS";
-				delete $A{$a};
-		} elsif (-d $a) {
-				$DIRS .= " $a";
-				delete $A{$a};
-		}
+			$A{"--with-$1-include"} = $A{"--with-$1-lib"};
+			$A{"--with-$1-include"} =~ s/lib$/include/;
+			}
+	}
+	elsif ($a =~ /^--without-([^-]+)$/)
+	{
+		$A{"--with-$1"} = "0";
+		delete $A{$a};
+	} elsif ($a =~ /^mavis$/) {
+		$DIRS = "$a$DIRS";
+		delete $A{$a};
+	} elsif (-d $a) {
+		$DIRS .= " $a";
+		delete $A{$a};
+	}
 }
 
 $DIRS = $DIRS_DEFAULT if $DIRS eq "";
@@ -279,20 +277,20 @@ $content .= "BASE=" . $cwd . "\n";
 
 if (exists $A{"--with-devpoll"})
 {
-		$content .= "WITH_DEVPOLL=1\n";
-		delete $A{"--with-devpoll"};
+	$content .= "WITH_DEVPOLL=1\n";
+	delete $A{"--with-devpoll"};
 }
 
 if (exists $A{"--with-epoll"})
 {
-		$content .= "WITH_EPOLL=" . $A{"--with-epoll"} . "\n";
-		delete $A{"--with-epoll"};
+	$content .= "WITH_EPOLL=" . $A{"--with-epoll"} . "\n";
+	delete $A{"--with-epoll"};
 }
 
 if (exists $A{"--debug"})
 {
-		$content .= "DEBUG=" . $A{"--debug"} . "\n";
-		delete $A{"--debug"};
+	$content .= "DEBUG=" . $A{"--debug"} . "\n";
+	delete $A{"--debug"};
 }
 
 $A{"--prefix"} = "/usr/local" unless exists $A{"--prefix"};
@@ -300,101 +298,102 @@ $content .= "DEST=" . $A{"--prefix"} . "\n";
 
 foreach $a ("bin", "sbin", "etc", "libexec", "lib")
 {
-		$A{"--$a"."dir"} = $A{"--prefix"} . "/$a"
-				unless exists $A{"--$a"."dir"};
-		$content .= uc($a)."DIR_DEST=" . $A{"--$a"."dir"} . "\n";
-		delete $A{"--$a"."dir"};
+	$A{"--$a"."dir"} = $A{"--prefix"} . "/$a" unless exists $A{"--$a"."dir"};
+	$content .= uc($a)."DIR_DEST=" . $A{"--$a"."dir"} . "\n";
+	delete $A{"--$a"."dir"};
 }
 
 foreach $a ("libarch")
 {
-		$A{"--$a"."dir"} = $A{"--prefix"} . "/lib$LIBARCH"
-				unless exists $A{"--$a"."dir"};
-		$content .= uc($a)."DIR_DEST=" . $A{"--$a"."dir"} . "\n";
-		delete $A{"--$a"."dir"};
+	$A{"--$a"."dir"} = $A{"--prefix"} . "/lib$LIBARCH" unless exists $A{"--$a"."dir"};
+	$content .= uc($a)."DIR_DEST=" . $A{"--$a"."dir"} . "\n";
+	delete $A{"--$a"."dir"};
 }
 
 foreach $a ("doc")
 {
-		$A{"--$a"."dir"} = $A{"--prefix"} . "/$doc"
-				unless exists $A{"--$a"."dir"};
-		$content .= uc($a)."DIR_DEST=" . $A{"--$a"."dir"} . "\n";
-		delete $A{"--$a"."dir"};
+	$A{"--$a"."dir"} = $A{"--prefix"} . "/$doc" unless exists $A{"--$a"."dir"};
+	$content .= uc($a)."DIR_DEST=" . $A{"--$a"."dir"} . "\n";
+	delete $A{"--$a"."dir"};
 }
 
 delete $A{"--prefix"};
 
 if (exists $A{"--installroot"})
 {
-		$content .= "INSTALLROOT=" . $A{"--installroot"} . "\n";
-		delete $A{"--installroot"};
+	$content .= "INSTALLROOT=" . $A{"--installroot"} . "\n";
+	delete $A{"--installroot"};
 }
 
 foreach $a (@options)
 {
-		if (exists $A{"--with-$a"} && defined $A{"--with-$a"} && $A{"--with-$a"} =~ /^\//)
-		{
-				$A{"--with-$a-lib"} = $A{"--with-$a"} . "/lib"
-						unless exists $A{"--with-$a-lib"};
-				$A{"--with-$a-include"} = $A{"--with-$a"} . "/include"
-						unless exists $A{"--with-$a-include"};
-				$A{"--with-$a"} = 1;
-		}
+	if (exists $A{"--with-$a"} && defined $A{"--with-$a"} && $A{"--with-$a"} =~ /^\//)
+	{
+		$A{"--with-$a-lib"} = $A{"--with-$a"} . "/lib" unless exists $A{"--with-$a-lib"};
+		$A{"--with-$a-include"} = $A{"--with-$a"} . "/include" unless exists $A{"--with-$a-include"};
+		$A{"--with-$a"} = 1;
+	}
 }
 
 foreach $a (@options)
 {
+	if (exists $A{"--with-$a"} && defined $A{"--with-$a"} && $A{"--with-$a"} != 0)
+	{
+		$A{"--with-$a-lib"} = "/usr/lib" unless exists $A{"--with-$a-lib"};
+		$A{"--with-$a-include"} = "/usr/include" unless exists $A{"--with-$a-include"};
+	}
+}
+
+foreach $a (@options)
+{
+	if (defined $A{"--with-$a"}) {
+		$content .= "WITH_" . uc ($a) . "=" . $A{"--with-$a"} . "\n";
+
 		if (exists $A{"--with-$a"} && defined $A{"--with-$a"} && $A{"--with-$a"} != 0)
 		{
-				$A{"--with-$a-lib"} = "/usr/lib"
-						unless exists $A{"--with-$a-lib"};
-				$A{"--with-$a-include"} = "/usr/include"
-						unless exists $A{"--with-$a-include"};
+			$content .= "LIBDIR_" . uc ($a) . "=" .  $A{"--with-$a-lib"} . "\n";
+			delete $A{"--with-$a-lib"};
+
+			$content .= "INCDIR_" . uc ($a) . "=" .  $A{"--with-$a-include"} . "\n";
+
+			delete $A{"--with-$a-include"};
 		}
-}
+	}
 
-foreach $a (@options)
-{
-		if (defined $A{"--with-$a"}) {
-				$content .= "WITH_" . uc ($a) . "=" . $A{"--with-$a"} . "\n";
-
-				if (exists $A{"--with-$a"} && defined $A{"--with-$a"} && $A{"--with-$a"} != 0)
-				{
-						$content .= "LIBDIR_" . uc ($a) . "=" .
-								$A{"--with-$a-lib"} . "\n";
-						delete $A{"--with-$a-lib"};
-
-						$content .= "INCDIR_" . uc ($a) . "=" .
-								$A{"--with-$a-include"} . "\n";
-
-						delete $A{"--with-$a-include"};
-				}
-		}
-
-		delete $A{"--with-$a"};
+	delete $A{"--with-$a"};
 }
 
 $content .= "LIBARCH=$LIBARCH\n" if defined $LIBARCH;
 
 if (exists $A{"--with-cc"})
 {
-		$content .= "CC=" . $A{"--with-cc"} . "\n";
-		delete $A{"--with-cc"};
+	$content .= "CC=" . $A{"--with-cc"} . "\n";
+	my $cc = $A{"--with-cc"};
+	delete $A{"--with-cc"};
+	my $gcc_multiarch = `$cc -print-multiarch 2>/dev/null || echo`;
+	chomp $gcc_multiarch;
+	$LIBARCH = "/$gcc_multiarch" if $gcc_multiarch ne "" && -d "/usr/lib/$gcc_multiarch";
+}
+else
+{
+	my $gcc_multiarch = `gcc -print-multiarch 2>/dev/null || echo`;
+	chomp $gcc_multiarch;
+	$LIBARCH = "/$gcc_multiarch" if $gcc_multiarch ne "" && -d "/usr/lib/$gcc_multiarch";
 }
 
 my (@rest) = sort keys %A;
 if ($#rest > -1)
 {
-		print <<EOT
+	print <<EOT
 
 The following options were not recognized:
 
 EOT
-		;
+	;
 
-		while ($#rest > -1)
-		{
-				print "\t" . shift (@rest) . "\n";
+	while ($#rest > -1)
+	{
+		print "\t" . shift (@rest) . "\n";
 	}
 
 	print <<EOT

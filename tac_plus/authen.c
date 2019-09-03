@@ -73,7 +73,7 @@
 # include <openssl/des.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.381 2019/06/08 06:20:13 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.382 2019/08/26 17:50:19 marc Exp marc $";
 
 struct authen_data {
     u_char *data;
@@ -691,7 +691,6 @@ static void do_chpass(tac_session * session)
 	if (session->tag)
 	    *session->tag++ = 0;
 	session->authen_data->msg = NULL;
-	return;
     }
     if (!session->username[0]) {
 	send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_GETUSER, set_welcome_banner(session, "\nUser Access Verification\n", "Username: "), 0, NULL, 0, 0);
