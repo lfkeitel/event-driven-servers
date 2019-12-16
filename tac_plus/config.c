@@ -84,7 +84,7 @@
 
 #include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.854 2017/11/04 09:03:35 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.855 2019/12/03 20:49:49 marc Exp marc $";
 
 struct tac_acllist {
     struct tac_acllist *next;
@@ -387,14 +387,20 @@ static void tac_sym_get(struct sym *sym)
     }
 }
 
+static time_t parse_date(struct sym *sym, time_t offset);
+
 static void parse_key(struct sym *sym, struct tac_key **tk)
 {
-    int keylen, warn = BISTATE_NO;
+    int keylen;
+    time_t warn = 0;
 
     tac_sym_get(sym);
     if (sym->code == S_warn) {
-	warn = BISTATE_YES;
 	tac_sym_get(sym);
+	if (sym->code == S_equal)
+	    warn = io_now.tv_sec - 1;
+	else
+	    warn = parse_date(sym, 0);
     }
 
     while (*tk)
@@ -1095,8 +1101,6 @@ static time_t parse_date(struct sym *sym, time_t offset)
 {
     int m, d, y;
     long long ll;
-
-    parse(sym, S_equal);
 
     if (3 == sscanf(sym->buf, "%d-%d-%d", &y, &m, &d)) {
 	struct tm tm;
@@ -2217,11 +2221,13 @@ static void parse_user_attr(struct sym *sym, tac_user * user, enum token user_or
 	    switch (sym->code) {
 	    case S_until:
 		tac_sym_get(sym);
+		parse(sym, S_equal);
 		user->valid_until = parse_date(sym, 86400);
 		break;
 	    case S_from:
 		tac_sym_get(sym);
 	    default:
+		parse(sym, S_equal);
 		user->valid_from = parse_date(sym, 0);
 		break;
 	    }
@@ -2229,6 +2235,7 @@ static void parse_user_attr(struct sym *sym, tac_user * user, enum token user_or
 	case S_expires:
 	    report(NULL, LOG_ERR, ~0, "%s:%u: \"expires\" keyword is deprecated, use " "\"valid until\" with one day less", sym->filename, sym->line);
 	    tac_sym_get(sym);
+	    parse(sym, S_equal);
 	    user->valid_until = parse_date(sym, 0);
 	    continue;
 	case S_debug:

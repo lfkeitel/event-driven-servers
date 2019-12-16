@@ -56,7 +56,7 @@
    FITNESS FOR A PARTICULAR PURPOSE.
 */
 
-/* $Id: headers.h,v 1.414 2019/03/31 09:14:23 marc Exp marc $ */
+/* $Id: headers.h,v 1.415 2019/12/03 20:50:00 marc Exp marc $ */
 
 #ifndef __HEADERS_H_
 #define __HEADERS_H_
@@ -131,7 +131,7 @@ struct pwdat {
 struct tac_key {
     struct tac_key *next;
     int len;
-     BISTATE(warn);
+    time_t warn;
     char key[1];
 };
 

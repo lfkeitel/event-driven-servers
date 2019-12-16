@@ -59,7 +59,7 @@
 #include "headers.h"
 #include "misc/mymd5.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.138 2019/06/08 06:28:25 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.141 2019/12/08 14:49:26 marc Exp marc $";
 
 static void write_packet(struct context *, tac_pak *);
 static tac_session *new_session(struct context *, tac_pak_hdr *);
@@ -426,11 +426,21 @@ void tac_read(struct context *ctx, int cur)
     } else {
 	if (ctx->hdr.seq_no != 1) {
 	    report(NULL, LOG_ERR, ~0,
-		   "%s: Stray packet (sequence number: %d) for session %.8x", ctx->nas_address_ascii, (int) ctx->hdr.seq_no, ntohl(ctx->hdr.session_id));
+		   "%s: %s packet (sequence number: %d) for session %.8x", "Stray", ctx->nas_address_ascii, (int) ctx->hdr.seq_no,
+		   ntohl(ctx->hdr.session_id));
 	    cleanup(ctx, cur);
 	    return;
 	}
+
 	session = new_session(ctx, &ctx->hdr);
+    }
+
+    if (ctx->key && (ctx->in->hdr.flags & TAC_PLUS_UNENCRYPTED_FLAG)) {
+	report(NULL, LOG_ERR, ~0,
+	       "%s: %s packet (sequence number: %d) for session %.8x", "Unencrypted", ctx->nas_address_ascii, (int) ctx->hdr.seq_no,
+	       ntohl(ctx->hdr.session_id));
+	cleanup(ctx, cur);
+	return;
     }
 
     if ((ctx->in->hdr.flags & TAC_PLUS_SINGLE_CONNECT_FLAG) && (ctx->single_connection == TRISTATE_YES)) {
@@ -500,7 +510,7 @@ void tac_read(struct context *ctx, int cur)
 	}
     } while (more_keys);
 
-    if (ctx->key && ctx->key->warn && !ctx->key_fixed)
+    if (ctx->key && (ctx->key->warn <= io_now.tv_sec) && !ctx->key_fixed)
 	report(NULL, LOG_INFO, ~0, "%s uses deprecated key", ctx->nas_address_ascii);
 
     ctx->key_fixed = 1;

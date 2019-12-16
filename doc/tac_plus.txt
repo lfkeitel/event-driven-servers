@@ -2,7 +2,7 @@ TACACS+
 
 Marc Huber
 
-   $Id: manual.xml,v 1.401 2017/08/02 17:23:08 marc Exp marc $
+   $Id: manual.xml,v 1.403 2019/12/08 15:48:57 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -1130,12 +1130,14 @@ id = tac_plus {
    The key-value pairs permitted in host sections of the
    configuration file are explained below.
 
-     * key [ warn ] = string
+     * key [ warn [ ( YYYY-MM-DD | s ) ] = string
        This sets the key used for encrypting the communication
        between server and NAS. Multiple keys may be set, making
        key migration from one key to another pretty easy. If the
        warn keyword is specified, a warning message is logged when
-       a NAS actually uses the key.
+       a NAS actually uses the key. Optionally, the warn keyword
+       accepts a date argument that specifies when the warnings
+       should start to appear in the logs.
        During debugging, it may be convenient to temporarily
        switch off encryption by using an empty key:
 key = ""
