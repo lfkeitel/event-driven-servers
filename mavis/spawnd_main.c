@@ -2,7 +2,7 @@
  * spawnd_main.c
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: spawnd_main.c,v 1.93 2019/03/31 09:14:23 marc Exp marc $
+ * $Id: spawnd_main.c,v 1.94 2020/01/18 12:57:44 marc Exp marc $
  *
  */
 
@@ -26,7 +26,7 @@
 #  include <sys/sysctl.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_main.c,v 1.93 2019/03/31 09:14:23 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_main.c,v 1.94 2020/01/18 12:57:44 marc Exp marc $";
 
 struct spawnd_data spawnd_data;	/* configuration data */
 
@@ -54,6 +54,12 @@ static void periodics(struct spawnd_context *ctx, int cur __attribute__ ((unused
 
 	if (i < common_data.servers_cur)
 	    spawnd_cleanup_internal(spawnd_data.server_arr[i], spawnd_data.server_arr[i]->fn);
+    }
+
+    if (spawnd_data.abandon) {
+	spawnd_data.abandon = 0;
+	while (common_data.servers_cur)
+	    spawnd_cleanup_internal(spawnd_data.server_arr[0], spawnd_data.server_arr[0]->fn);
     }
 
     spawnd_cleanup_tracking();
@@ -325,6 +331,7 @@ int spawnd_main(int argc, char **argv, char **envp, char *id)
     spawnd_data.keepcnt = -1;
     spawnd_data.keepidle = -1;
     spawnd_data.scm_bufsize = 0;	// leave at system default
+    spawnd_data.abandon = 0;
 
     if (!getsockopt(0, SOL_SOCKET, SO_TYPE, &socktype, &socktypelen))
 	switch (socktype) {

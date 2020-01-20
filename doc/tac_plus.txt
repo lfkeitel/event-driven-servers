@@ -2,7 +2,7 @@ TACACS+
 
 Marc Huber
 
-   $Id: manual.xml,v 1.403 2019/12/08 15:48:57 marc Exp marc $
+   $Id: manual.xml,v 1.404 2020/01/18 13:09:34 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -211,6 +211,10 @@ tac_plus [ -P ] [ -d level ] [ -i child_id ] configuration-file [ id ]
      * If SIGHUP is sent to a child process it will stop accepting
        new connections from its master process. It will continue
        to serve the existing connections and terminate when idle.
+
+   Sending SIGUSR1 to the master process will cause it to abandon
+   existing child processes (these will continue to serve the
+   existing connections only) and start new child processes.
      __________________________________________________________
 
 3.3. Event mechanism selection

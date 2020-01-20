@@ -1,7 +1,7 @@
 /*
  * signals.c (C)1999-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: spawnd_signals.c,v 1.20 2015/03/14 06:11:28 marc Exp $
+ * $Id: spawnd_signals.c,v 1.21 2020/01/18 12:57:44 marc Exp marc $
  *
  */
 
@@ -9,7 +9,7 @@
 #include "misc/sysconf.h"
 #include <sysexits.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_signals.c,v 1.20 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_signals.c,v 1.21 2020/01/18 12:57:44 marc Exp marc $";
 
 static sigset_t master_set;
 
@@ -42,6 +42,11 @@ static void catchterm(int i __attribute__ ((unused)))
     exit(EX_OK);
 }
 
+static void catchusr1(int i __attribute__ ((unused)))
+{
+    spawnd_data.abandon = 1;
+}
+
 void spawnd_setup_signals()
 {
     signal(SIGPIPE, SIG_IGN);
@@ -52,11 +57,13 @@ void spawnd_setup_signals()
 	signal(SIGHUP, catchhup);
     signal(SIGINT, catchterm);
     signal(SIGTERM, catchterm);
+    signal(SIGUSR1, catchusr1);
 
     sigfillset(&master_set);
     sigdelset(&master_set, SIGSEGV);
     sigdelset(&master_set, SIGTERM);
     sigdelset(&master_set, SIGINT);
+    sigdelset(&master_set, SIGUSR1);
     if (spawnd_data.inetd)
 	sigdelset(&master_set, SIGHUP);
     sigprocmask(SIG_SETMASK, &master_set, NULL);

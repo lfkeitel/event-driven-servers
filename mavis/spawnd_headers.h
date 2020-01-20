@@ -4,7 +4,7 @@
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: spawnd_headers.h,v 1.34 2019/03/31 09:14:23 marc Exp marc $
+ * $Id: spawnd_headers.h,v 1.35 2020/01/18 12:57:44 marc Exp marc $
  *
  */
 
@@ -60,6 +60,7 @@ struct spawnd_data {
     gid_t gid;
     char *cwd;			/* child's working directory */
     int inetd;
+    int abandon;
     int background;
     int background_lock;
     char *pidfile;

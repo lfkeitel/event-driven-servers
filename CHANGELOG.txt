@@ -25,4 +25,5 @@
 20190825 tac_plus: CHPASS should now work as expected. Untested.
 20191203 tac_plus: Don't let a client downgrade a connection to clear mode if a encryption key is defined (I see no scenario where that could ever happen, but anyway ...)
 20191203 tac_plus: "key warn" now accepts a date argument ("key warn 2019-11-29 = foobar")
+20200118 spawnd/tac_plus master: SIGUSR1 now restarts child processes
 
