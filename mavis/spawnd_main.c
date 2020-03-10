@@ -311,6 +311,9 @@ int spawnd_main(int argc, char **argv, char **envp, char *id)
 #ifdef WITH_PCRE
 	"/PCRE"
 #endif
+#ifdef WITH_PCRE2
+	"/PCRE2"
+#endif
 #ifdef WITH_SSL
 	"/DES"
 #endif
@@ -537,6 +540,9 @@ void scm_main(int argc, char **argv, char **envp)
     common_data.version = VERSION
 #ifdef WITH_PCRE
 	"/PCRE"
+#endif
+#ifdef WITH_PCRE2
+	"/PCRE2"
 #endif
 #ifdef WITH_SSL
 	"/DES"

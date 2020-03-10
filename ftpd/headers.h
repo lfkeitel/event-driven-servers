@@ -59,6 +59,10 @@
 #    include <pcre.h>
 #  endif
 
+#  ifdef WITH_PCRE2
+#    include <pcre2.h>
+#  endif
+
 #  include <regex.h>
 
 #  include "messages.h"
@@ -270,7 +274,7 @@ int chunk_release(struct context *, off_t);
 
 void quota_add(struct context *, long long);
 
-#  ifdef WITH_PCRE
+#  if defined(WITH_PCRE) || defined(WITH_PCRE2)
 int PCRE_add(char *, char *, char *);
 int PCRE_exec(const char *, char *, size_t);
 #  endif

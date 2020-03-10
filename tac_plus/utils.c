@@ -43,10 +43,13 @@
 #ifdef WITH_PCRE
 # include <pcre.h>
 #endif
+#ifdef WITH_PCRE2
+# include <pcre2.h>
+#endif
 
 # include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: utils.c,v 1.104 2017/05/05 10:19:01 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: utils.c,v 1.107 2020/03/06 12:52:57 marc Exp marc $";
 
 void *mempool_malloc(rb_tree_t * pool, size_t size)
 {
@@ -116,10 +119,15 @@ rb_tree_t *mempool_create(void)
     return RB_tree_new(pool_cmp, free);
 }
 
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
 rb_tree_t *tac_pcrepool_create(void)
 {
+# ifdef WITH_PCRE
     return RB_tree_new(pool_cmp, (void (*)(void *)) pcre_free);
+# endif
+# ifdef WITH_PCRE2
+    return RB_tree_new(pool_cmp, (void (*)(void *)) pcre2_code_free);
+# endif
 }
 #endif
 

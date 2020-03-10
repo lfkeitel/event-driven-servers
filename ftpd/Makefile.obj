@@ -21,6 +21,10 @@ ifeq ($(WITH_PCRE), 1)
 	OBJ += pcre_rewrite.o
 endif
 
+ifeq ($(WITH_PCRE2), 1)
+	OBJ += pcre_rewrite.o
+endif
+
 ifeq ($(WITH_SSL), 1)
 	OBJ += h_auth.o ssl_init.o ssl_verify.o h_pbsz.o h_prot.o h_ccc.o
 endif

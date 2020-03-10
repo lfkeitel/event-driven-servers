@@ -4,14 +4,14 @@
  * (C) 2000-2011 Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: conf.c,v 1.39 2017/11/04 09:03:20 marc Exp marc $
+ * $Id: conf.c,v 1.40 2020/03/02 18:11:41 marc Exp marc $
  *
  */
 
 #include "headers.h"
 
 static const char rcsid[]
-    __attribute__ ((used)) = "$Id: conf.c,v 1.39 2017/11/04 09:03:20 marc Exp marc $";
+    __attribute__ ((used)) = "$Id: conf.c,v 1.40 2020/03/02 18:11:41 marc Exp marc $";
 
 enum {
     ARG_BOOL = 0, ARG_U_INT, ARG_OCT, ARG_U_LONG, ARG_LONG_LONG, ARG_INT,
@@ -40,6 +40,9 @@ struct acl_element {
 	regex_t *r;
 #ifdef WITH_PCRE
 	pcre *p;
+#endif
+#ifdef WITH_PCRE2
+	pcre2_code *p;
 #endif
     } blob;
 };
@@ -137,6 +140,15 @@ static int match_regex(void *reg, char *txt, enum ftp_acl_type tat)
 #ifdef WITH_PCRE
     case T_regex_pcre:
 	return -1 < pcre_exec((pcre *) reg, NULL, txt, (int) strlen(txt), 0, 0, NULL, 0);
+#endif
+#ifdef WITH_PCRE2
+    case T_regex_pcre:{
+	    int res;
+	    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern((pcre2_code *) reg, NULL);
+	    res = pcre2_match((pcre2_code *) reg, (PCRE2_SPTR) txt, (PCRE2_SIZE) strlen(txt), 0, 0, match_data, NULL);
+	    pcre2_match_data_free(match_data);
+	    return -1 < res;
+	}
 #endif
     default:
 	return 0;
@@ -829,7 +841,20 @@ static enum ftp_acl_type parse_aclregex(struct sym *sym, struct acl_element *ae,
 	sym_get(sym);
 	return T_regex_pcre;
 #else
+# ifdef WITH_PCRE2
+	PCRE2_SIZE erroffset;
+	ae->blob.p =
+	    pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | PCRE2_UTF | (ic ? PCRE2_CASELESS : 0), &errcode, &erroffset, NULL);
+	if (!ae->blob.p) {
+	    PCRE2_UCHAR buffer[256];
+	    pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+	    parse_error(sym, "In PCRE expression /%s/ at offset %d: %s", sym->buf, erroffset, buffer);
+	}
+	sym_get(sym);
+	return T_regex_pcre;
+# else
 	parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
     }
     ae->blob.r = calloc(1, sizeof(regex_t));
@@ -1617,7 +1642,7 @@ void parse_decls(struct sym *sym)
 #endif
 
 	case S_rewrite:{
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
 		char *a0 = NULL, *a1 = NULL;
 		u_int line = sym->line;
 		sym->flag_parse_pcre = 1;

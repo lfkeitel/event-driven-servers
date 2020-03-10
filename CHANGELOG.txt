@@ -27,4 +27,6 @@
 20191203 tac_plus: "key warn" now accepts a date argument ("key warn 2019-11-29 = foobar")
 20200118 spawnd/tac_plus master: SIGUSR1 now restarts child processes
 20200121 spawnd/tac_plus master: SIGUSR1: restart handler
+20200302 Add PCRE2 support. Disabled by default, for now. Needs more testing. Use "configure --with-pcre2 ..." to give it a try.
+20200305 Add experimental support for username rewriting. Requires PCRE v2.
 

@@ -60,7 +60,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: acct.c,v 1.94 2018/11/29 18:27:35 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: acct.c,v 1.95 2020/03/05 18:50:22 marc Exp $";
 
 int accounting_pak_looks_bogus(tac_pak_hdr * hdr)
 {
@@ -87,7 +87,7 @@ void accounting(tac_session * session, tac_pak_hdr * hdr)
     if (rbt) {
 	struct acct *acct = tac_payload(hdr, struct acct *);
 	int i;
-	char *acct_type, *username, *portname, *argstart, *msgid;
+	char *acct_type, *portname, *argstart, *msgid;
 	u_char *argsizep;
 	u_char *p = (u_char *) acct + TAC_ACCT_REQ_FIXED_FIELDS_SIZE + acct->arg_cnt;
 
@@ -103,7 +103,9 @@ void accounting(tac_session * session, tac_pak_hdr * hdr)
 	log_start(rbt, session->ctx->nas_address_ascii, msgid);
 
 	log_write(rbt, (char *) p, acct->user_len);
-	username = (char *) p;
+	session->username = (char *) p;
+	tac_rewrite_user(session);
+// FIXME??? This ignores possible tagging (but nobody seems to use that anyway ...
 	p += acct->user_len;
 
 	log_write_separator(rbt);
@@ -136,7 +138,7 @@ void accounting(tac_session * session, tac_pak_hdr * hdr)
 		if (!strcmp((char *) p, "service=exec")) {
 		    char *mu = alloca(acct->user_len + 1);
 		    char *mp = alloca(acct->port_len + 1);
-		    strncpy(mu, username, acct->user_len);
+		    strncpy(mu, session->username, strlen(session->username));
 		    mu[acct->user_len] = 0;
 		    strncpy(mp, portname, acct->port_len);
 		    mp[acct->port_len] = 0;

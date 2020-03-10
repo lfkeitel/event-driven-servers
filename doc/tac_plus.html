@@ -14,8 +14,8 @@
 <div class="TITLEPAGE">
 <h1 class="title"><a name="AEN2" id="AEN2">TACACS+</a></h1>
 <h3 class="author"><a name="AEN4" id="AEN4">Marc Huber</a></h3>
-<span class="releaseinfo">$Id: manual.xml,v 1.404 2020/01/18
-13:09:34 marc Exp marc $<br></span>
+<span class="releaseinfo">$Id: manual.xml,v 1.406 2020/03/05
+19:30:36 marc Exp marc $<br></span>
 <hr></div>
 <div class="TOC">
 <dl>
@@ -69,60 +69,61 @@ Realms</a></dt>
 <dt>4.3.3. <a href="#AEN809">Hosts</a></dt>
 <dt>4.3.4. <a href="#AEN1282">Time Ranges</a></dt>
 <dt>4.3.5. <a href="#AEN1308">Access Control Lists</a></dt>
-<dt>4.3.6. <a href="#AEN1384">Scripts</a></dt>
-<dt>4.3.7. <a href="#AEN1436">Users and Groups</a></dt>
+<dt>4.3.6. <a href="#AEN1384">Rewriting User Names</a></dt>
+<dt>4.3.7. <a href="#AEN1394">Scripts</a></dt>
+<dt>4.3.8. <a href="#AEN1446">Users and Groups</a></dt>
 </dl>
 </dd>
 </dl>
 </dd>
-<dt>5. <a href="#AEN2319">MAVIS Backends</a></dt>
+<dt>5. <a href="#AEN2329">MAVIS Backends</a></dt>
 <dd>
 <dl>
-<dt>5.1. <a href="#AEN2327">LDAP Backends</a></dt>
+<dt>5.1. <a href="#AEN2337">LDAP Backends</a></dt>
 <dd>
 <dl>
-<dt>5.1.1. <a href="#AEN2493">LDAP Custom Schema Backend</a></dt>
-<dt>5.1.2. <a href="#AEN2516">Active Directory Backend</a></dt>
-<dt>5.1.3. <a href="#AEN2522">Generic LDAP Backend</a></dt>
+<dt>5.1.1. <a href="#AEN2503">LDAP Custom Schema Backend</a></dt>
+<dt>5.1.2. <a href="#AEN2526">Active Directory Backend</a></dt>
+<dt>5.1.3. <a href="#AEN2532">Generic LDAP Backend</a></dt>
 </dl>
 </dd>
-<dt>5.2. <a href="#AEN2530">PAM backend</a></dt>
-<dt>5.3. <a href="#AEN2535">System Password Backends</a></dt>
-<dt>5.4. <a href="#AEN2543">Shadow Backend</a></dt>
-<dt>5.5. <a href="#AEN2566">RADIUS Backend</a></dt>
+<dt>5.2. <a href="#AEN2540">PAM backend</a></dt>
+<dt>5.3. <a href="#AEN2545">System Password Backends</a></dt>
+<dt>5.4. <a href="#AEN2553">Shadow Backend</a></dt>
+<dt>5.5. <a href="#AEN2576">RADIUS Backend</a></dt>
 <dd>
 <dl>
-<dt>5.5.1. <a href="#AEN2573">Sample Configuration</a></dt>
+<dt>5.5.1. <a href="#AEN2583">Sample Configuration</a></dt>
 </dl>
 </dd>
-<dt>5.6. <a href="#AEN2591">Experimental Backends</a></dt>
-<dt>5.7. <a href="#AEN2595">Error Handling</a></dt>
+<dt>5.6. <a href="#AEN2601">Experimental Backends</a></dt>
+<dt>5.7. <a href="#AEN2605">Error Handling</a></dt>
 </dl>
 </dd>
-<dt>6. <a href="#AEN2603">Debugging</a></dt>
+<dt>6. <a href="#AEN2613">Debugging</a></dt>
 <dd>
 <dl>
-<dt>6.1. <a href="#AEN2606">Debugging Configuration Files</a></dt>
-<dt>6.2. <a href="#AEN2614">Trace Options</a></dt>
+<dt>6.1. <a href="#AEN2616">Debugging Configuration Files</a></dt>
+<dt>6.2. <a href="#AEN2624">Trace Options</a></dt>
 </dl>
 </dd>
-<dt>7. <a href="#AEN2764">Frequently Asked Questions</a></dt>
-<dt>8. <a href="#AEN3014">Canned Configurations</a></dt>
+<dt>7. <a href="#AEN2774">Frequently Asked Questions</a></dt>
+<dt>8. <a href="#AEN3024">Canned Configurations</a></dt>
 <dd>
 <dl>
-<dt>8.1. <a href="#AEN3017">Login Authentication</a></dt>
-<dt>8.2. <a href="#AEN3028">Command Authorization</a></dt>
-<dt>8.3. <a href="#AEN3042">Network Access Authorization</a></dt>
-<dt>8.4. <a href="#AEN3055">ARAP</a></dt>
-<dt>8.5. <a href="#AEN3063">Callback</a></dt>
+<dt>8.1. <a href="#AEN3027">Login Authentication</a></dt>
+<dt>8.2. <a href="#AEN3038">Command Authorization</a></dt>
+<dt>8.3. <a href="#AEN3052">Network Access Authorization</a></dt>
+<dt>8.4. <a href="#AEN3065">ARAP</a></dt>
+<dt>8.5. <a href="#AEN3073">Callback</a></dt>
 </dl>
 </dd>
-<dt>9. <a href="#AEN3077">Authorization AV pairs</a></dt>
-<dt>10. <a href="#AEN3492">Upgrading from Previous
+<dt>9. <a href="#AEN3087">Authorization AV pairs</a></dt>
+<dt>10. <a href="#AEN3502">Upgrading from Previous
 Releases</a></dt>
-<dt>11. <a href="#AEN3508">Bugs</a></dt>
-<dt>12. <a href="#AEN3522">References</a></dt>
-<dt>13. <a href="#AEN3532">Copyrights and Acknowledgements</a></dt>
+<dt>11. <a href="#AEN3518">Bugs</a></dt>
+<dt>12. <a href="#AEN3532">References</a></dt>
+<dt>13. <a href="#AEN3542">Copyrights and Acknowledgements</a></dt>
 </dl>
 </div>
 <div class="section">
@@ -2300,7 +2301,32 @@ Railroad Diagrams</a></h5>
 </div>
 <div class="section">
 <hr>
-<h4 class="section"><a name="AEN1384" id="AEN1384">4.3.6.
+<h4 class="section"><a name="AEN1384" id="AEN1384">4.3.6. Rewriting
+User Names</a></h4>
+<p>This is experimental. It requires the binary to be built with
+PCRE v2 support (using the <tt class="literal">--with-pcre2</tt>
+configure option).</p>
+<p>A host may refer to a rewrite profile defined at realm level to
+substitute user names. The following sample code will map both
+<tt class="literal">admin</tt> and <tt class="literal">root</tt> to
+<tt class="literal">marc</tt>, and convert all other usernames to
+lower-case:</p>
+<pre class="screen">rewrite = rewriteRule {
+    rewrite /^admin$/ marc
+    rewrite /^root$/ marc
+    rewrite /^.*$/ \L$0
+}
+
+host = ... {
+    ...
+    rewrite user = rewriteRule
+    ...
+}</pre>
+<p>Please keep in mind that this is experimental ...</p>
+</div>
+<div class="section">
+<hr>
+<h4 class="section"><a name="AEN1394" id="AEN1394">4.3.7.
 Scripts</a></h4>
 <p>Scripts may currently be used for ACLs and in service
 declaration scope:</p>
@@ -2326,7 +2352,7 @@ declaration scope:</p>
 </ul>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1401" id="AEN1401">4.3.6.1.
+<h5 class="section"><a name="AEN1411" id="AEN1411">4.3.7.1.
 Syntax</a></h5>
 <p>A script consists of a series of actions:</p>
 <div class="mediaobject">
@@ -2361,7 +2387,7 @@ example in the corresponding section.</p>
 </div>
 <div class="section">
 <hr>
-<h4 class="section"><a name="AEN1436" id="AEN1436">4.3.7. Users and
+<h4 class="section"><a name="AEN1446" id="AEN1446">4.3.8. Users and
 Groups</a></h4>
 <p>User and group declarations are pretty similar. The major
 difference is, that groups are <span class="emphasis"><i class=
@@ -2386,7 +2412,7 @@ another group and so on, ad infinitum.</p>
 service declarations.</p>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1453" id="AEN1453">4.3.7.1.
+<h5 class="section"><a name="AEN1463" id="AEN1463">4.3.8.1.
 User-only options</a></h5>
 <p>The following declarations are valid in <span class=
 "emphasis"><i class="emphasis">user</i></span> context only:</p>
@@ -2486,7 +2512,7 @@ user = marc {
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1540" id="AEN1540">4.3.7.2.
+<h5 class="section"><a name="AEN1550" id="AEN1550">4.3.8.2.
 Group-only options</a></h5>
 <p>The following declarations are valid in <span class=
 "emphasis"><i class="emphasis">group</i></span> context only:</p>
@@ -2502,14 +2528,14 @@ group. Already existing definitions take precedence.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1551" id="AEN1551">4.3.7.3. User
+<h5 class="section"><a name="AEN1561" id="AEN1561">4.3.8.3. User
 and Group options</a></h5>
 <p>The following key-value pairs are valid in both <span class=
 "emphasis"><i class="emphasis">user</i></span> and <span class=
 "emphasis"><i class="emphasis">group</i></span> context:</p>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN1556" id="AEN1556">4.3.7.3.1.
+<h6 class="section"><a name="AEN1566" id="AEN1566">4.3.8.3.1.
 Limits</a></h6>
 <p>Validity of an user or group may be limited by various
 attributes:</p>
@@ -2604,7 +2630,7 @@ groups, e.g.:</p>
 </div>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN1621" id="AEN1621">4.3.7.3.2.
+<h6 class="section"><a name="AEN1631" id="AEN1631">4.3.8.3.2.
 Messages</a></h6>
 <p>These options handle displaying of messages to the user.</p>
 <ul>
@@ -2625,7 +2651,7 @@ login.</p>
 </div>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN1640" id="AEN1640">4.3.7.3.3.
+<h6 class="section"><a name="AEN1650" id="AEN1650">4.3.8.3.3.
 Enable passwords</a></h6>
 <p>Enable passwords may be specified at, in order of preference,
 host, user or group level:</p>
@@ -2655,7 +2681,7 @@ enables to is 15.</p>
 </div>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN1660" id="AEN1660">4.3.7.3.4. MAVIS
+<h6 class="section"><a name="AEN1670" id="AEN1670">4.3.8.3.4. MAVIS
 options</a></h6>
 <p>The following <span class="emphasis"><i class=
 "emphasis">MAVIS</i></span> related option is available for groups
@@ -2673,7 +2699,7 @@ realm to use for <span class="emphasis"><i class=
 </div>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN1672" id="AEN1672">4.3.7.3.5. Group
+<h6 class="section"><a name="AEN1682" id="AEN1682">4.3.8.3.5. Group
 membership</a></h6>
 <p>Group membership is specified using the <tt class=
 "literal">member</tt> directive:</p>
@@ -2844,7 +2870,7 @@ acl</tt>.</p>
 </div>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN1764" id="AEN1764">4.3.7.3.6.
+<h6 class="section"><a name="AEN1774" id="AEN1774">4.3.8.3.6.
 Railroad Diagrams</a></h6>
 <div class="mediaobject">
 <p><img src="railroad/tac_plus/UserDecl.gif"></p>
@@ -2898,7 +2924,7 @@ Railroad Diagrams</a></h6>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1822" id="AEN1822">4.3.7.4. Service
+<h5 class="section"><a name="AEN1832" id="AEN1832">4.3.8.4. Service
 Restrictions</a></h5>
 <ul>
 <li>
@@ -2917,7 +2943,7 @@ explicitely deny the X.25 service:</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1837" id="AEN1837">4.3.7.5. Service
+<h5 class="section"><a name="AEN1847" id="AEN1847">4.3.8.5. Service
 Definitions</a></h5>
 <p>Service definitions may appear in <span class=
 "emphasis"><i class="emphasis">user</i></span> and <span class=
@@ -3077,12 +3103,12 @@ within a service declaration. (default: <tt class=
 devices do), you can advise the parser to automatically add
 these:</p>
 <pre class="screen">service = shell {
-    shell:roles="\"network-admin\""
+    set shell:roles="\"network-admin\""
 }</pre>
 <p>and</p>
 <pre class="screen">service = shell {
     double-quote-values = yes
-    shell:roles="network-admin"
+    set shell:roles="network-admin"
 }</pre>
 <p>are equivalent, but the latter is more readable.</p>
 </td>
@@ -3092,7 +3118,7 @@ these:</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1949" id="AEN1949">4.3.7.6.
+<h5 class="section"><a name="AEN1959" id="AEN1959">4.3.8.6.
 Host-group specific services</a></h5>
 <p>Services can be configured NAS specific by appending <tt class=
 "literal">@</tt><span class="emphasis"><i class=
@@ -3113,7 +3139,7 @@ backends.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1958" id="AEN1958">4.3.7.7. CLI
+<h5 class="section"><a name="AEN1968" id="AEN1968">4.3.8.7. CLI
 Contexts</a></h5>
 <p>When used with <tt class="literal">single-connection</tt> and
 being told so, the daemon tries to remember command context. which
@@ -3148,7 +3174,7 @@ for exactly one interface, but denies it for all the others:</p>
 }</pre></div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1964" id="AEN1964">4.3.7.8.
+<h5 class="section"><a name="AEN1974" id="AEN1974">4.3.8.8.
 Examples</a></h5>
 <p>Here we declare two users <tt class="literal">fred</tt> and
 <tt class="literal">lily</tt>, and two groups, <tt class=
@@ -3189,7 +3215,7 @@ user = fred {
 }</pre></div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN1978" id="AEN1978">4.3.7.9.
+<h5 class="section"><a name="AEN1988" id="AEN1988">4.3.8.9.
 Railroad Diagrams</a></h5>
 <div class="mediaobject">
 <p><img src="railroad/tac_plus/ServiceDecl.gif"></p>
@@ -3266,7 +3292,7 @@ Railroad Diagrams</a></h5>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2064" id="AEN2064">4.3.7.10.
+<h5 class="section"><a name="AEN2074" id="AEN2074">4.3.8.10.
 Configuring Non-local Users via MAVIS</a></h5>
 <p><span class="bold"><b class="emphasis">MAVIS</b></span>
 configuration is optional. You don't need it if you're content with
@@ -3289,7 +3315,7 @@ may change that period using</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2077" id="AEN2077">4.3.7.11.
+<h5 class="section"><a name="AEN2087" id="AEN2087">4.3.8.11.
 Configuring Local Users for MAVIS authentication</a></h5>
 <p>Under certain circumstances you may wish to keep the user
 definitions in the plain text configuration file, but authenticate
@@ -3302,7 +3328,7 @@ do so, just specify one of</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2082" id="AEN2082">4.3.7.12.
+<h5 class="section"><a name="AEN2092" id="AEN2092">4.3.8.12.
 Recursion and Groups</a></h5>
 <p>In general, when the daemon looks up values, it will look first
 to see if the user has her own definition for that value. If not,
@@ -3321,7 +3347,7 @@ needed.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2087" id="AEN2087">4.3.7.13.
+<h5 class="section"><a name="AEN2097" id="AEN2097">4.3.8.13.
 Configuring User Authentication</a></h5>
 <p>User Authentication can be specified separately for PAP, ARAP,
 CHAP, and normal logins. ARAP, CHAP, and global user authentication
@@ -3360,7 +3386,7 @@ mavis</tt> directive in this case):</p>
 <pre class="screen">user = mary { login = mavis }</pre></div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2103" id="AEN2103">4.3.7.14.
+<h5 class="section"><a name="AEN2113" id="AEN2113">4.3.8.14.
 Configuring Expiry Dates</a></h5>
 <p>An entry of the form:</p>
 <pre class="screen">user = lol {
@@ -3387,7 +3413,7 @@ directive.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2120" id="AEN2120">4.3.7.15.
+<h5 class="section"><a name="AEN2130" id="AEN2130">4.3.8.15.
 Configuring Authentication on the NAS</a></h5>
 <p>On the NAS, to configure login authentication, try</p>
 <pre class="screen">aaa new-model
@@ -3432,7 +3458,7 @@ way out.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2136" id="AEN2136">4.3.7.16.
+<h5 class="section"><a name="AEN2146" id="AEN2146">4.3.8.16.
 Configuring Authorization</a></h5>
 <p>Authorization must be configured on both the NAS and the daemon
 to operate correctly. By default, the NAS will allow everything
@@ -3448,7 +3474,7 @@ commands and services.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2141" id="AEN2141">4.3.7.17.
+<h5 class="section"><a name="AEN2151" id="AEN2151">4.3.8.17.
 Authorizing Commands</a></h5>
 <p>Exec commands are those commands which are typed at a Cisco exec
 prompt. When authorization is requested by the NAS, the entire
@@ -3571,7 +3597,7 @@ performing authorization e.g. by configuring NAS-local privileged
 enable levels on the NAS itself.</p>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN2185" id="AEN2185">4.3.7.17.1.
+<h6 class="section"><a name="AEN2195" id="AEN2195">4.3.8.17.1.
 Command Expansion</a></h6>
 <p>For command authorization, the Cisco NAS expands all commands to
 their full names e.g. when you type <tt class="literal">config
@@ -3609,7 +3635,7 @@ of the regular expression matches to create default behavior.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2200" id="AEN2200">4.3.7.18.
+<h5 class="section"><a name="AEN2210" id="AEN2210">4.3.8.18.
 Authorizing EXEC (SHELL) Startup</a></h5>
 <p>You can supply some parameters whenever an shell starts, e.g. an
 autocommand, a dialback string or a connection access list (acl).
@@ -3651,7 +3677,7 @@ or simply <tt class="literal">default</tt>.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2212" id="AEN2212">4.3.7.19.
+<h5 class="section"><a name="AEN2222" id="AEN2222">4.3.8.19.
 Authorizing EXEC, SLIP, PPP and ARAP services</a></h5>
 <p>Authorizing EXEC, SLIP, PPP and ARAP services is done quite
 differently from command authorization.</p>
@@ -3679,7 +3705,7 @@ debug output.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2229" id="AEN2229">4.3.7.20. The
+<h5 class="section"><a name="AEN2239" id="AEN2239">4.3.8.20. The
 Authorization Process</a></h5>
 <p>Authorizing a single session can result in multiple requests
 being sent to the daemon. For example, in order to authorize a
@@ -3725,7 +3751,7 @@ going to agree and they shut down PPP instead.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2248" id="AEN2248">4.3.7.21.
+<h5 class="section"><a name="AEN2258" id="AEN2258">4.3.8.21.
 Authorization Relies on Authentication</a></h5>
 <p>Since we pretty much rely on having a username in authorization
 requests to decide which addresses etc. to hand out, it is
@@ -3757,7 +3783,7 @@ missing.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2260" id="AEN2260">4.3.7.22.
+<h5 class="section"><a name="AEN2270" id="AEN2270">4.3.8.22.
 Configuring Service Authorization</a></h5>
 <p>A list of AV pairs is placed in the daemon's configuration file
 in order to authorize services. The daemon compares each NAS AV
@@ -3767,7 +3793,7 @@ delete AV pairs before returning them to the NAS, thereby
 restricting what the user is permitted to do.</p>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN2263" id="AEN2263">4.3.7.22.1. The
+<h6 class="section"><a name="AEN2273" id="AEN2273">4.3.8.22.1. The
 Authorization Algorithm</a></h6>
 <p>The complete algorithm by which the daemon processes its
 configured AV pairs against the list the NAS sends, is given
@@ -3836,7 +3862,7 @@ mandatory attribute).</p>
 </div>
 <div class="section">
 <hr>
-<h6 class="section"><a name="AEN2296" id="AEN2296">4.3.7.22.2.
+<h6 class="section"><a name="AEN2306" id="AEN2306">4.3.8.22.2.
 Recursive Authorization</a></h6>
 <p>Remember that authorization is also recursive over groups. Thus,
 if you place a user in a group, the daemon will look in the group
@@ -3846,7 +3872,7 @@ declaration.</p>
 </div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2299" id="AEN2299">4.3.7.23.
+<h5 class="section"><a name="AEN2309" id="AEN2309">4.3.8.23.
 Examples</a></h5>
 <pre class="screen">host = 0.0.0.0/0 {
     key = "your key here"
@@ -3916,7 +3942,7 @@ user = wilma {
 }</pre></div>
 <div class="section">
 <hr>
-<h5 class="section"><a name="AEN2303" id="AEN2303">4.3.7.24.
+<h5 class="section"><a name="AEN2313" id="AEN2313">4.3.8.24.
 Configuring Authorization on the NAS</a></h5>
 <p>If authorization is not explicitly configured on the NAS, no
 authorization takes place, i.e. effectively, everything is
@@ -3960,7 +3986,7 @@ as that user:</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN2319" id="AEN2319">5. MAVIS
+<h2 class="section"><a name="AEN2329" id="AEN2329">5. MAVIS
 Backends</a></h2>
 <p>The distribution comes with various <span class=
 "emphasis"><i class="emphasis">MAVIS</i></span> modules, of which
@@ -3976,7 +4002,7 @@ environment.</p>
 gives examples for RADIUS and PAM authentication, too.</p>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2327" id="AEN2327">5.1. LDAP
+<h3 class="section"><a name="AEN2337" id="AEN2337">5.1. LDAP
 Backends</a></h3>
 <p><tt class="literal">mavis_tacplus_ldap.pl</tt> is an
 authentication/authorization backend for the <span class=
@@ -3984,7 +4010,7 @@ authentication/authorization backend for the <span class=
 interfaces to various kinds of LDAP servers, e.g. OpenLDAP, Fedora
 DS and Active Directory. Its behaviour is controlled by a list of
 environmental variables:</p>
-<div class="table"><a name="AEN2332" id="AEN2332"></a>
+<div class="table"><a name="AEN2342" id="AEN2342"></a>
 <p><b>Table 2. LDAP Backend Environment Variables</b></p>
 <table border="1" frame="border" class="CALSTABLE">
 <col width="30%" title="col1">
@@ -4166,7 +4192,7 @@ running <span class="emphasis"><i class=
 </div>
 <div class="section">
 <hr>
-<h4 class="section"><a name="AEN2493" id="AEN2493">5.1.1. LDAP
+<h4 class="section"><a name="AEN2503" id="AEN2503">5.1.1. LDAP
 Custom Schema Backend</a></h4>
 <p>For <tt class="literal">LDAP_SERVER_TYPE</tt> set to <tt class=
 "literal">tacacs_schema</tt>, the program expects the LDAP server
@@ -4217,7 +4243,7 @@ versions of OpenLDAP: Use <tt class="literal">ldapadd</tt> to add
 </div>
 <div class="section">
 <hr>
-<h4 class="section"><a name="AEN2516" id="AEN2516">5.1.2. Active
+<h4 class="section"><a name="AEN2526" id="AEN2526">5.1.2. Active
 Directory Backend</a></h4>
 <p>If <tt class="literal">LDAP_SERVER_TYPE</tt> is set to
 <tt class="literal">microsoft</tt>, the script backends to AD
@@ -4302,7 +4328,7 @@ id = tac_plus {
 }</pre></div>
 <div class="section">
 <hr>
-<h4 class="section"><a name="AEN2522" id="AEN2522">5.1.3. Generic
+<h4 class="section"><a name="AEN2532" id="AEN2532">5.1.3. Generic
 LDAP Backend</a></h4>
 <p>If <tt class="literal">LDAP_SERVER_TYPE</tt> is set to
 <tt class="literal">generic</tt>, the script won't require any
@@ -4315,7 +4341,7 @@ authorization is done by this backend.</p>
 </div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2530" id="AEN2530">5.2. PAM
+<h3 class="section"><a name="AEN2540" id="AEN2540">5.2. PAM
 backend</a></h3>
 <p>Example configuration for using <span class="emphasis"><i class=
 "emphasis">Pluggable Authentication Modules</i></span>:</p>
@@ -4354,7 +4380,7 @@ id = tac_plus {
 }</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2535" id="AEN2535">5.3. System
+<h3 class="section"><a name="AEN2545" id="AEN2545">5.3. System
 Password Backends</a></h3>
 <p><tt class="literal">mavis_tacplus_passwd.pl</tt> authenticates
 against your local password database. Alas, to use this
@@ -4385,7 +4411,7 @@ id = tac_plus {
 }</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2543" id="AEN2543">5.4. Shadow
+<h3 class="section"><a name="AEN2553" id="AEN2553">5.4. Shadow
 Backend</a></h3>
 <p><tt class="literal">mavis_tacplus_shadow.pl</tt> may be used to
 keep user passwords out of the <span class="bold"><b class=
@@ -4434,7 +4460,7 @@ test:$1$pQtQsMuj$GKpIr5r2GNaZNfDfnCBtw.:15218:1:30:
 ...</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2566" id="AEN2566">5.5. RADIUS
+<h3 class="section"><a name="AEN2576" id="AEN2576">5.5. RADIUS
 Backend</a></h3>
 <p><tt class="literal">mavis_tacplus_radius.pl</tt> authenticates
 against a RADIUS server. No authorization is done, unless the
@@ -4447,7 +4473,7 @@ authentication passwords should be verified by RADIUS. Use the
 this to work.</p>
 <div class="section">
 <hr>
-<h4 class="section"><a name="AEN2573" id="AEN2573">5.5.1. Sample
+<h4 class="section"><a name="AEN2583" id="AEN2583">5.5.1. Sample
 Configuration</a></h4>
 <pre class="screen">mavis module = external {
         exec = /usr/local/lib/mavis_tacplus_radius.pl
@@ -4479,14 +4505,14 @@ login time.</p>
 </div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2591" id="AEN2591">5.6.
+<h3 class="section"><a name="AEN2601" id="AEN2601">5.6.
 Experimental Backends</a></h3>
 <p><tt class="literal">mavis_tacplus_sms.pl</tt> is a sample
 (skeleton) script to send One-Time Passwords via a SMS backend.</p>
 </div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2595" id="AEN2595">5.7. Error
+<h3 class="section"><a name="AEN2605" id="AEN2605">5.7. Error
 Handling</a></h3>
 <p>If a backend script fails due to an external problem (e.g. LDAP
 server unavailability), your router may or may not fall back to
@@ -4523,11 +4549,11 @@ basis. Default is enabled.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN2603" id="AEN2603">6.
+<h2 class="section"><a name="AEN2613" id="AEN2613">6.
 Debugging</a></h2>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2606" id="AEN2606">6.1. Debugging
+<h3 class="section"><a name="AEN2616" id="AEN2616">6.1. Debugging
 Configuration Files</a></h3>
 <p>When creating configuration files, it is convenient to check
 their syntax using the <tt class="literal">-P</tt> flag to
@@ -4539,7 +4565,7 @@ messages on the terminal.</p>
 </div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2614" id="AEN2614">6.2. Trace
+<h3 class="section"><a name="AEN2624" id="AEN2624">6.2. Trace
 Options</a></h3>
 <p>Trace (or debugging) options may be specified in <span class=
 "emphasis"><i class="emphasis">global</i></span>, <span class=
@@ -4563,7 +4589,7 @@ information to <tt class="literal">syslog</tt>.</p>
 <p>The debugging options available are summarized in the
 <span class="emphasis"><i class="emphasis">Debug and Trace
 Values</i></span> table.</p>
-<div class="table"><a name="AEN2632" id="AEN2632"></a>
+<div class="table"><a name="AEN2642" id="AEN2642"></a>
 <p><b>Table 3. Debug and Trace Values</b></p>
 <table border="1" frame="border" class="CALSTABLE">
 <col width="5%" title="col1">
@@ -4726,7 +4752,7 @@ output at all.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN2764" id="AEN2764">7. Frequently
+<h2 class="section"><a name="AEN2774" id="AEN2774">7. Frequently
 Asked Questions</a></h2>
 <ul>
 <li>
@@ -5092,7 +5118,7 @@ authorization and accounting.</p>
 <p>vpdn specific information includes the attributes <tt class=
 "literal">tunnel-id</tt>, <tt class="literal">source-ip</tt>
 (deprecated) and <tt class="literal">ip-addresses</tt>:</p>
-<div class="informaltable"><a name="AEN2955" id="AEN2955"></a>
+<div class="informaltable"><a name="AEN2965" id="AEN2965"></a>
 <table border="1" class="CALSTABLE">
 <col>
 <col>
@@ -5218,13 +5244,13 @@ keyword in place of the <tt class="literal">chap</tt> keyword.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3014" id="AEN3014">8. Canned
+<h2 class="section"><a name="AEN3024" id="AEN3024">8. Canned
 Configurations</a></h2>
 <p>Here are some canned configurations for getting demos
 started:</p>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3017" id="AEN3017">8.1. Login
+<h3 class="section"><a name="AEN3027" id="AEN3027">8.1. Login
 Authentication</a></h3>
 <p>A canned configuration for login authentication only. This
 allows user <tt class="literal">fred</tt> to login with password
@@ -5249,7 +5275,7 @@ tacacs-server host ...
 tacacs-server key some key</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3028" id="AEN3028">8.2. Command
+<h3 class="section"><a name="AEN3038" id="AEN3038">8.2. Command
 Authorization</a></h3>
 <p>This will allow user <tt class="literal">fred</tt> to login with
 password <tt class="literal">abcdef</tt> and to run the privileged
@@ -5282,7 +5308,7 @@ tacacs-server host 10.1.1.1
 tacacs-server key some key</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3042" id="AEN3042">8.3. Network
+<h3 class="section"><a name="AEN3052" id="AEN3052">8.3. Network
 Access Authorization</a></h3>
 <p>This config allows <tt class="literal">fred</tt> to login to
 <tt class="literal">line 1</tt> with password <tt class=
@@ -5325,7 +5351,7 @@ line 1
 ! need "modem inout" here and flow control if using a modem</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3055" id="AEN3055">8.4.
+<h3 class="section"><a name="AEN3065" id="AEN3065">8.4.
 ARAP</a></h3>
 <p><span class="bold"><b class="emphasis">Daemon:</b></span></p>
 <pre class="screen">id = spawnd {
@@ -5366,7 +5392,7 @@ line 1
   flowcontrol hardware</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3063" id="AEN3063">8.5.
+<h3 class="section"><a name="AEN3073" id="AEN3073">8.5.
 Callback</a></h3>
 <div class="note">
 <table class="note" width="100%" border="0">
@@ -5455,7 +5481,7 @@ int async 6
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3077" id="AEN3077">9. Authorization
+<h2 class="section"><a name="AEN3087" id="AEN3087">9. Authorization
 AV pairs</a></h2>
 <p>The following authorization AV pairs specify which service is
 being authorized and are typically accompanied by protocol AV pairs
@@ -6136,7 +6162,7 @@ debug multilink
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3492" id="AEN3492">10. Upgrading
+<h2 class="section"><a name="AEN3502" id="AEN3502">10. Upgrading
 from Previous Releases</a></h2>
 <p>There may be some caveats to consider if you're using a previous
 version of the software:</p>
@@ -6161,7 +6187,7 @@ requiring the environmental variable <tt class=
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3508" id="AEN3508">11.
+<h2 class="section"><a name="AEN3518" id="AEN3518">11.
 Bugs</a></h2>
 <ul>
 <li>
@@ -6190,7 +6216,7 @@ guidance.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3522" id="AEN3522">12.
+<h2 class="section"><a name="AEN3532" id="AEN3532">12.
 References</a></h2>
 <ul>
 <li>
@@ -6207,7 +6233,7 @@ Protocol (Version 1.78)</a></p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3532" id="AEN3532">13. Copyrights
+<h2 class="section"><a name="AEN3542" id="AEN3542">13. Copyrights
 and Acknowledgements</a></h2>
 <p>Please see the source for copyright and licensing information of
 individual files.</p>
@@ -6289,7 +6315,7 @@ with the distribution.</p>
 <li>
 <p>The end-user documentation included with the redistribution, if
 any, must include the following acknowledgment:</p>
-<a name="AEN3575" id="AEN3575"></a>
+<a name="AEN3585" id="AEN3585"></a>
 <blockquote class="BLOCKQUOTE">
 <p>This product includes software developed by Marc Huber
 (<code class="email">&lt;<a href=

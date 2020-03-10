@@ -73,7 +73,7 @@ char *buildpath(struct context *ctx, char *path)
 {
     static char tmp[PATH_MAX + 1];
     char *t = tmp, *c = tmp;
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
     static char pcretmp[PATH_MAX + 1];
 #endif				/* WITH_PCRE */
 
@@ -107,7 +107,7 @@ char *buildpath(struct context *ctx, char *path)
 	Debug((DEBUG_PATH, "- %s = NULL\n", __func__));
 	return NULL;
     }
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
     if (t && PCRE_exec(t, pcretmp, sizeof(pcretmp)))
 	t = *pcretmp ? pcretmp : NULL;
 #endif				/* WITH_PCRE */

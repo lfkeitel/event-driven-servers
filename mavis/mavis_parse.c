@@ -87,6 +87,9 @@
 #ifdef WITH_PCRE
 # include <pcre.h>
 #endif
+#ifdef WITH_PCRE2
+# include <pcre2.h>
+#endif
 
 #include <regex.h>
 
@@ -96,7 +99,7 @@
 #include "spawnd_headers.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.174 2019/06/07 17:17:08 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.175 2020/03/02 18:11:41 marc Exp marc $";
 
 struct common_data common_data;
 
@@ -143,6 +146,9 @@ void init_common_data(void)
     common_data.scm_recv_msg = scm_recv_msg;
 #ifdef WITH_PCRE
     common_data.regex_pcre_flags = PCRE_CASELESS;
+#endif
+#ifdef WITH_PCRE2
+    common_data.regex_pcre_flags = PCRE2_CASELESS | PCRE2_UTF;
 #endif
     common_data.regex_posix_flags = REG_ICASE;
     logopen();
@@ -512,7 +518,11 @@ void getsym(struct sym *sym)
 		sym_getchar(sym);
 		return;
 #else
+# ifdef WITH_PCRE
+#  error FIXME
+# else
 		parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
 	    }
 	    /* Fallthrough */
@@ -676,9 +686,15 @@ void sym_get(struct sym *sym)
 #ifdef WITH_PCRE
 	    common_data.regex_pcre_flags = PCRE_CASELESS;
 #endif
+#ifdef WITH_PCRE2
+	    common_data.regex_pcre_flags = PCRE2_CASELESS | PCRE2_UTF;
+#endif
 	    common_data.regex_posix_flags = REG_ICASE;
 	} else {
 #ifdef WITH_PCRE
+	    common_data.regex_pcre_flags = 0;
+#endif
+#ifdef WITH_PCRE2
 	    common_data.regex_pcre_flags = 0;
 #endif
 	    common_data.regex_posix_flags = 0;
@@ -694,10 +710,16 @@ void sym_get(struct sym *sym)
 #ifdef WITH_PCRE
 	    common_data.regex_pcre_flags = PCRE_CASELESS;
 #endif
+#ifdef WITH_PCRE2
+	    common_data.regex_pcre_flags = PCRE2_CASELESS | PCRE2_UTF;
+#endif
 	    common_data.regex_posix_flags = REG_ICASE;
 	} else {
 	    common_data.regex_match_case &= ~1LL;
 #ifdef WITH_PCRE
+	    common_data.regex_pcre_flags = 0;
+#endif
+#ifdef WITH_PCRE2
 	    common_data.regex_pcre_flags = 0;
 #endif
 	    common_data.regex_posix_flags = 0;
@@ -1909,7 +1931,22 @@ static struct mavis_cond *mavis_cond_parse_r(struct sym *sym)
 		sym_get(sym);
 		return p ? p : m;
 #else
+# ifdef WITH_PCRE2
+		PCRE2_SIZE erroffset;
+		m->type = S_slash;
+		m->u.s.v =
+		    pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | common_data.regex_pcre_flags, &errcode, &erroffset, NULL);
+		if (!m->u.s.v) {
+		    PCRE2_UCHAR buffer[256];
+		    pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+		    parse_error(sym, "In PCRE2 expression /%s/ at offset %d: %s", sym->buf, erroffset, buffer);
+		}
+		sym->flag_parse_pcre = 0;
+		sym_get(sym);
+		return p ? p : m;
+# else
 		parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
 	    }
 	    m->u.s.v = calloc(1, sizeof(regex_t));
@@ -2022,6 +2059,12 @@ static int ovector[OVECCOUNT];
 static int pcre_res = 0;
 static char *pcre_arg = NULL;
 #endif
+#ifdef WITH_PCRE2
+static pcre2_match_data *match_data = NULL;
+static PCRE2_SIZE *ovector = NULL;
+static int pcre_res = 0;
+static PCRE2_SPTR8 pcre_arg = NULL;
+#endif
 
 int mavis_cond_eval(av_ctx * ac, struct mavis_cond *m)
 {
@@ -2068,7 +2111,27 @@ int mavis_cond_eval(av_ctx * ac, struct mavis_cond *m)
 	    report_cfg_error(LOG_INFO, ~0, "PCRE ovector only has room for %d captured substrings", OVECCOUNT / 3 - 1);
 	return -1 < pcre_res;
 #else
+# ifdef WITH_PCRE2
+	if (match_data) {
+	    pcre2_match_data_free(match_data);
+	    match_data = NULL;
+	}
+	if (!(v = av_get(ac, m->u.s.a1)))
+	    return 0;
+	match_data = pcre2_match_data_create_from_pattern((pcre2_code *) m->u.s.v, NULL);
+	pcre_arg = (PCRE2_SPTR8) v;
+	pcre_res = pcre2_match((pcre2_code *) m->u.s.v, pcre_arg, (PCRE2_SIZE) strlen(v), 0, 0, match_data, NULL);
+	if (pcre_res < 0 && pcre_res != PCRE2_ERROR_NOMATCH)
+	    report_cfg_error(LOG_INFO, ~0, "PCRE2 matching error: %d", pcre_res);
+	ovector = pcre2_get_ovector_pointer(match_data);
+	if (!ovector)
+	    report_cfg_error(LOG_INFO, ~0, "PCRE2 ovector was not big enough for all the captured substrings");
+	if (ovector[0] > ovector[1])
+	    report_cfg_error(LOG_INFO, ~0, "PCRE2: \\K was used in an assertion, giving up");
+	return -1 < pcre_res;
+# else
 	report_cfg_error(LOG_INFO, ~0, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
     default:;
     }
@@ -2093,6 +2156,9 @@ static void mavis_cond_drop(struct mavis_cond **m)
     case S_slash:
 #ifdef WITH_PCRE
 	pcre_free((*m)->u.s.v);
+#endif
+#ifdef WITH_PCRE2
+	pcre2_code_free((*m)->u.s.v);
 #endif
 	break;
     default:;
@@ -2212,6 +2278,9 @@ static enum token mavis_script_eval_r(mavis_ctx * mcx, av_ctx * ac, struct mavis
 #ifdef WITH_PCRE
 	    int i;
 #endif
+#ifdef WITH_PCRE2
+	    int i;
+#endif
 	    char s[4096];	// yeah, this sucks.
 	    char *v = m->b.v;
 	    char *se = s + sizeof(s) - strlen(v) - 100;
@@ -2227,6 +2296,9 @@ static enum token mavis_script_eval_r(mavis_ctx * mcx, av_ctx * ac, struct mavis
 #ifdef WITH_PCRE
 		    i = *v - '0';
 #endif
+#ifdef WITH_PCRE2
+		    i = *v - '0';
+#endif
 		    v++;
 #ifdef WITH_PCRE
 		    if (pcre_arg) {
@@ -2238,7 +2310,18 @@ static enum token mavis_script_eval_r(mavis_ctx * mcx, av_ctx * ac, struct mavis
 			t += l;
 		    }
 #else
+# ifdef WITH_PCRE2
+		    if (pcre_arg) {
+			size_t l;
+			i--;
+			l = ovector[2 * i + 1] - ovector[2 * i];
+			if (((int) (se - t) > (int) l))
+			    strncpy(t, (char *) pcre_arg + ovector[2 * i], l);
+			t += l;
+		    }
+# else
 		    report_cfg_error(LOG_INFO, ~0, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
 		    continue;
 		case '\\':
@@ -2396,6 +2479,10 @@ void mavis_script_parse(mavis_ctx * mcx, struct sym *sym)
 enum token mavis_script_eval(mavis_ctx * mcx, av_ctx * ac, struct mavis_action *m)
 {
 #ifdef WITH_PCRE
+    pcre_res = 0;
+    pcre_arg = NULL;
+#endif
+#ifdef WITH_PCRE2
     pcre_res = 0;
     pcre_arg = NULL;
 #endif

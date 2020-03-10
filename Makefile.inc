@@ -286,43 +286,112 @@ endif
 
 # Check for PCRE library:
 
-ifeq ($(WITH_PCRE),)
-	ifneq ($(wildcard /lib$(LIBARCH)/libpcre$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
-		ifneq ($(wildcard /usr/include/pcre.h),)
-			WITH_PCRE=1
+ifeq ($(WITH_PCRE2),1)
+	WITH_PCRE=0
+endif
+
+ifneq ($(WITH_PCRE2),1)
+	# Try to auto-detect PCRE unless configure told us to use v2
+	ifeq ($(WITH_PCRE),)
+		ifneq ($(wildcard /lib$(LIBARCH)/libpcre$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /usr/include/pcre.h),)
+				WITH_PCRE=1
+			endif
 		endif
+	endif
+
+	ifeq ($(WITH_PCRE),)
+		ifneq ($(wildcard /usr/local/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /usr/local/include/pcre.h),)
+				INCDIR_PCRE=/usr/local/include
+				LIBDIR_PCRE=/usr/local/lib$(LIBARCH)
+				WITH_PCRE=1
+			endif
+		endif
+	endif
+
+	ifeq ($(WITH_PCRE),)
+		ifneq ($(wildcard /opt/local/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /opt/local/include/pcre.h),)
+				INCDIR_PCRE=/opt/local/include
+				LIBDIR_PCRE=/opt/local/lib$(LIBARCH)
+				WITH_PCRE=1
+			endif
+		endif
+	endif
+
+	ifeq ($(WITH_PCRE),)
+		ifneq ($(wildcard /usr/sfw/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /usr/sfw/include/pcre.h),)
+				INCDIR_PCRE=/usr/sfw/include
+				LIBDIR_PCRE=/usr/sfw/lib$(LIBARCH)
+				WITH_PCRE=1
+			endif
+		endif
+	endif
+
+	ifeq ($(WITH_PCRE),1)
+		ifneq ($(INCDIR_PCRE),)
+			INC_PCRE	= -I$(INCDIR_PCRE)
+		endif
+		ifneq ($(LIBDIR_PCRE),)
+			LIB_PCRE	= -L$(LIBDIR_PCRE) $(LDOPT_R)$(LIBDIR_PCRE)
+		endif
+		DEF += -DWITH_PCRE
+		LIB_PCRE	+= -lpcre
 	endif
 endif
 
-ifeq ($(WITH_PCRE),)
-	ifneq ($(wildcard /usr/local/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
-		ifneq ($(wildcard /usr/local/include/pcre.h),)
-			INCDIR_PCRE=/usr/local/include
-			LIBDIR_PCRE=/usr/local/lib$(LIBARCH)
-			WITH_PCRE=1
+ifneq ($(WITH_PCRE),1)
+	# Try to auto-detect PCRE v2 unless v1 was found
+	ifeq ($(WITH_PCRE2),)
+		ifneq ($(wildcard /lib$(LIBARCH)/libpcre2-8$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libpcre2-8$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /usr/include/pcre2.h),)
+				WITH_PCRE2=1
+			endif
 		endif
 	endif
-endif
 
-ifeq ($(WITH_PCRE),)
-	ifneq ($(wildcard /usr/sfw/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
-		ifneq ($(wildcard /usr/sfw/include/pcre.h),)
-			INCDIR_PCRE=/usr/sfw/include
-			LIBDIR_PCRE=/usr/sfw/lib$(LIBARCH)
-			WITH_PCRE=1
+	ifeq ($(WITH_PCRE2),)
+		ifneq ($(wildcard /usr/local/lib$(LIBARCH)/libpcre2-8$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /usr/local/include/pcre2.h),)
+				INCDIR_PCRE2=/usr/local/include
+				LIBDIR_PCRE2=/usr/local/lib$(LIBARCH)
+				WITH_PCRE2=1
+			endif
 		endif
 	endif
-endif
 
-ifeq ($(WITH_PCRE),1)
-	ifneq ($(INCDIR_PCRE),)
-		INC_PCRE	= -I$(INCDIR_PCRE)
+	ifeq ($(WITH_PCRE2),)
+		ifneq ($(wildcard /opt/local/lib$(LIBARCH)/libpcre2-8$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /opt/local/include/pcre2.h),)
+				INCDIR_PCRE2=/opt/local/include
+				LIBDIR_PCRE2=/opt/local/lib$(LIBARCH)
+				WITH_PCRE2=1
+			endif
+		endif
 	endif
-	ifneq ($(LIBDIR_PCRE),)
-		LIB_PCRE	= -L$(LIBDIR_PCRE) $(LDOPT_R)$(LIBDIR_PCRE)
+
+	ifeq ($(WITH_PCRE2),)
+		ifneq ($(wildcard /usr/sfw/lib$(LIBARCH)/libpcre2-8$(SHLIB_EXT)*),)
+			ifneq ($(wildcard /usr/sfw/include/pcre2.h),)
+				INCDIR_PCRE2=/usr/sfw/include
+				LIBDIR_PCRE2=/usr/sfw/lib$(LIBARCH)
+				WITH_PCRE2=1
+			endif
+		endif
 	endif
-	DEF += -DWITH_PCRE
-	LIB_PCRE	+= -lpcre
+
+	ifeq ($(WITH_PCRE2),1)
+		ifneq ($(INCDIR_PCRE2),)
+			INC_PCRE	= -I$(INCDIR_PCRE2)
+		endif
+		ifneq ($(LIBDIR_PCRE2),)
+			LIB_PCRE	= -L$(LIBDIR_PCRE2) $(LDOPT_R)$(LIBDIR_PCRE2)
+		endif
+		DEF += -DWITH_PCRE2 -DPCRE2_CODE_UNIT_WIDTH=8
+		LIB_PCRE	+= -lpcre2-8
+	endif
 endif
 
 # Check for FreeRADIUS client library:

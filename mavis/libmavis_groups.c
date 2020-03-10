@@ -28,6 +28,9 @@
 #ifdef WITH_PCRE
 # include <pcre.h>
 #endif
+#ifdef WITH_PCRE2
+# include <pcre2.h>
+#endif
 
 #include <regex.h>
 
@@ -84,7 +87,10 @@ static void parse_filter_regex(struct sym *sym, struct regex_list **l)
 	    if (!(*l)->p)
 		parse_error(sym, "In PCRE expression /%s/ at offset %d: %s", sym->buf, erroffset, errptr);
 #else
+# ifdef WITH_PCRE2
+# else
 	    parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
 	} else
 	{
@@ -219,6 +225,9 @@ static int rxmatch(void *v, char *s, enum token token)
 #ifdef WITH_PCRE
     case S_slash:
 	return -1 < pcre_exec((pcre *) v, NULL, s, strlen(s), 0, 0, NULL, 0);
+#else
+# ifdef WHITH_PCRE2
+# endif
 #endif
     default:
 	return !regexec((regex_t *) v, s, 0, NULL, 0);
@@ -314,6 +323,9 @@ static void drop_gr(struct regex_list *r)
 	if (r->type == S_slash)
 	    pcre_free(r->p);
 	else
+# if WITH_PCRE2
+#  error FIXME
+# endif
 #endif
 	    regfree(r->p);
 

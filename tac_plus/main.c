@@ -49,7 +49,7 @@
 #include "misc/strops.h"
 #include "mavis/log.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.277 2019/05/29 10:09:33 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.278 2020/03/05 18:50:22 marc Exp $";
 
 struct config config;		/* configuration data */
 
@@ -152,7 +152,7 @@ static void periodics(struct context *ctx, int cur __attribute__ ((unused)))
 	die_when_idle = -1;
 
     if (common_data.users_cur == 0 && die_when_idle)
-	cleanup_spawnd(ctx, -1 /* unused */);
+	cleanup_spawnd(ctx, -1 /* unused */ );
 
     expire_dynamic_users();
 
@@ -561,6 +561,12 @@ static void accept_control_raw(int s, struct scm_data_accept *sd)
 	for (i = arr_max; i > arr_min; i--)
 	    if (arr[i]->nac_realm) {
 		ctx->nac_realm = arr[i]->nac_realm;
+		break;
+	    }
+
+	for (i = arr_max; i > arr_min; i--)
+	    if (arr[i]->aaa_realm) {
+		ctx->rewrite_user = arr[i]->rewrite_user;
 		break;
 	    }
 

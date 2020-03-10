@@ -73,7 +73,7 @@
 # include <openssl/des.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.382 2019/08/26 17:50:19 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.383 2020/03/05 18:50:22 marc Exp $";
 
 struct authen_data {
     u_char *data;
@@ -691,6 +691,7 @@ static void do_chpass(tac_session * session)
 	if (session->tag)
 	    *session->tag++ = 0;
 	session->authen_data->msg = NULL;
+	tac_rewrite_user(session);
     }
     if (!session->username[0]) {
 	send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_GETUSER, set_welcome_banner(session, "\nUser Access Verification\n", "Username: "), 0, NULL, 0, 0);
@@ -859,6 +860,7 @@ static void do_enable_augmented(tac_session * session)
 	    session->username = session->authen_data->msg;
 	    session->password = u;
 	    session->authen_data->msg = NULL;
+	    tac_rewrite_user(session);
 	    lookup_and_set_user(session);
 	}
     }
@@ -967,6 +969,7 @@ static void do_ascii_login(tac_session * session)
 	session->tag = strchr(session->username, session->ctx->aaa_realm->separator);
 	if (session->tag)
 	    *session->tag++ = 0;
+	tac_rewrite_user(session);
     }
 
     if (!session->username[0]) {
@@ -1081,6 +1084,7 @@ static void do_enable_getuser(tac_session * session)
 	session->tag = strchr(session->username, session->ctx->aaa_realm->separator);
 	if (session->tag)
 	    *session->tag++ = 0;
+	tac_rewrite_user(session);
     }
 
     if (!session->username[0]) {
@@ -1652,6 +1656,7 @@ void authen(tac_session * session, tac_pak_hdr * hdr)
 	    session->tag = strchr(session->username, session->ctx->aaa_realm->separator);
 	    if (session->tag)
 		*session->tag++ = 0;
+	    tac_rewrite_user(session);
 	    p += start->user_len;
 	    session->nas_port = mempool_strndup(session->pool, p, start->port_len);
 	    p += start->port_len;

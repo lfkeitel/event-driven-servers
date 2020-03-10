@@ -58,7 +58,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.284 2019/03/03 13:51:03 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.285 2020/03/05 18:50:22 marc Exp $";
 
 struct author_data {
     char *server_msg;		/* user message (optional) */
@@ -114,6 +114,7 @@ void author(tac_session * session, tac_pak_hdr * hdr)
     session->tag = strchr(session->username, session->ctx->aaa_realm->separator);
     if (session->tag)
 	*session->tag++ = 0;
+    tac_rewrite_user(session);
     p += pak->user_len;
     session->nas_port = mempool_strndup(session->pool, p, (int) pak->port_len);
     p += pak->port_len;

@@ -2,7 +2,7 @@ TACACS+
 
 Marc Huber
 
-   $Id: manual.xml,v 1.404 2020/01/18 13:09:34 marc Exp marc $
+   $Id: manual.xml,v 1.406 2020/03/05 19:30:36 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -42,8 +42,9 @@ Marc Huber
               4.3.3. Hosts
               4.3.4. Time Ranges
               4.3.5. Access Control Lists
-              4.3.6. Scripts
-              4.3.7. Users and Groups
+              4.3.6. Rewriting User Names
+              4.3.7. Scripts
+              4.3.8. Users and Groups
 
    5. MAVIS Backends
 
@@ -1574,7 +1575,31 @@ acl = myacl {
    Railroad diagram: ACLExpr
      __________________________________________________________
 
-4.3.6. Scripts
+4.3.6. Rewriting User Names
+
+   This is experimental. It requires the binary to be built with
+   PCRE v2 support (using the --with-pcre2 configure option).
+
+   A host may refer to a rewrite profile defined at realm level to
+   substitute user names. The following sample code will map both
+   admin and root to marc, and convert all other usernames to
+   lower-case:
+rewrite = rewriteRule {
+    rewrite /^admin$/ marc
+    rewrite /^root$/ marc
+    rewrite /^.*$/ \L$0
+}
+
+host = ... {
+    ...
+    rewrite user = rewriteRule
+    ...
+}
+
+   Please keep in mind that this is experimental ...
+     __________________________________________________________
+
+4.3.7. Scripts
 
    Scripts may currently be used for ACLs and in service
    declaration scope:
@@ -1596,7 +1621,7 @@ le\\.com$/) deny
     }
      __________________________________________________________
 
-4.3.6.1. Syntax
+4.3.7.1. Syntax
 
    A script consists of a series of actions:
 
@@ -1622,7 +1647,7 @@ le\\.com$/) deny
    cmd and context may be used in shell context only.
      __________________________________________________________
 
-4.3.7. Users and Groups
+4.3.8. Users and Groups
 
    User and group declarations are pretty similar. The major
    difference is, that groups are static, while user declarations
@@ -1644,7 +1669,7 @@ group = groupname {  ...  }
    service declarations.
      __________________________________________________________
 
-4.3.7.1. User-only options
+4.3.8.1. User-only options
 
    The following declarations are valid in user context only:
 
@@ -1698,7 +1723,7 @@ user = marc {
 }
      __________________________________________________________
 
-4.3.7.2. Group-only options
+4.3.8.2. Group-only options
 
    The following declarations are valid in group context only:
 
@@ -1708,13 +1733,13 @@ user = marc {
        precedence.
      __________________________________________________________
 
-4.3.7.3. User and Group options
+4.3.8.3. User and Group options
 
    The following key-value pairs are valid in both user and group
    context:
      __________________________________________________________
 
-4.3.7.3.1. Limits
+4.3.8.3.1. Limits
 
    Validity of an user or group may be limited by various
    attributes:
@@ -1764,7 +1789,7 @@ user = marc {
     server = nas01
      __________________________________________________________
 
-4.3.7.3.2. Messages
+4.3.8.3.2. Messages
 
    These options handle displaying of messages to the user.
 
@@ -1775,7 +1800,7 @@ user = marc {
        motd and user messages upon login.
      __________________________________________________________
 
-4.3.7.3.3. Enable passwords
+4.3.8.3.3. Enable passwords
 
    Enable passwords may be specified at, in order of preference,
    host, user or group level:
@@ -1794,7 +1819,7 @@ user = marc {
        she enables to is 15.
      __________________________________________________________
 
-4.3.7.3.4. MAVIS options
+4.3.8.3.4. MAVIS options
 
    The following MAVIS related option is available for groups and
    locally defined users:
@@ -1805,7 +1830,7 @@ user = marc {
        MAVIS authentications.
      __________________________________________________________
 
-4.3.7.3.5. Group membership
+4.3.8.3.5. Group membership
 
    Group membership is specified using the member directive:
 
@@ -1945,7 +1970,7 @@ user = fred {
        syntax instead of tag acl.
      __________________________________________________________
 
-4.3.7.3.6. Railroad Diagrams
+4.3.8.3.6. Railroad Diagrams
 
    [UserDecl.eps]
 
@@ -1980,7 +2005,7 @@ user = fred {
    Railroad diagram: GroupOnlyAttr
      __________________________________________________________
 
-4.3.7.4. Service Restrictions
+4.3.8.4. Service Restrictions
 
      * default service = ( permit | deny )
        This defines whether a service not explicitely defined in
@@ -1991,7 +2016,7 @@ user = fred {
     prohibit service = x25
      __________________________________________________________
 
-4.3.7.5. Service Definitions
+4.3.8.5. Service Definitions
 
    Service definitions may appear in user and group sections.
    Services can easily be made dependent on ACLs:
@@ -2118,19 +2143,19 @@ service = dominionsx {
    devices do), you can advise the parser to automatically add
    these:
 service = shell {
-    shell:roles="\"network-admin\""
+    set shell:roles="\"network-admin\""
 }
 
    and
 service = shell {
     double-quote-values = yes
-    shell:roles="network-admin"
+    set shell:roles="network-admin"
 }
 
    are equivalent, but the latter is more readable.
      __________________________________________________________
 
-4.3.7.6. Host-group specific services
+4.3.8.6. Host-group specific services
 
    Services can be configured NAS specific by appending @host to
    the service name. Here, host is the name of a host object, not
@@ -2148,7 +2173,7 @@ user = ... {
    authentication backends.
      __________________________________________________________
 
-4.3.7.7. CLI Contexts
+4.3.8.7. CLI Contexts
 
    When used with single-connection and being told so, the daemon
    tries to remember command context. which permits the shutdown
@@ -2184,7 +2209,7 @@ rk for you."
 }
      __________________________________________________________
 
-4.3.7.8. Examples
+4.3.8.8. Examples
 
    Here we declare two users fred and lily, and two groups, admin
    and staff.
@@ -2224,7 +2249,7 @@ user = fred {
 }
      __________________________________________________________
 
-4.3.7.9. Railroad Diagrams
+4.3.8.9. Railroad Diagrams
 
    [ServiceDecl.eps]
 
@@ -2275,7 +2300,7 @@ user = fred {
    Railroad diagram: ProtoDecl
      __________________________________________________________
 
-4.3.7.10. Configuring Non-local Users via MAVIS
+4.3.8.10. Configuring Non-local Users via MAVIS
 
    MAVIS configuration is optional. You don't need it if you're
    content with user configuration in the main configuration file.
@@ -2298,7 +2323,7 @@ cache timeout = seconds
    in the global configuration section.
      __________________________________________________________
 
-4.3.7.11. Configuring Local Users for MAVIS authentication
+4.3.8.11. Configuring Local Users for MAVIS authentication
 
    Under certain circumstances you may wish to keep the user
    definitions in the plain text configuration file, but
@@ -2311,7 +2336,7 @@ cache timeout = seconds
    in the corresponding user definition.
      __________________________________________________________
 
-4.3.7.12. Recursion and Groups
+4.3.8.12. Recursion and Groups
 
    In general, when the daemon looks up values, it will look first
    to see if the user has her own definition for that value. If
@@ -2332,7 +2357,7 @@ cache timeout = seconds
    selected users as needed.
      __________________________________________________________
 
-4.3.7.13. Configuring User Authentication
+4.3.8.13. Configuring User Authentication
 
    User Authentication can be specified separately for PAP, ARAP,
    CHAP, and normal logins. ARAP, CHAP, and global user
@@ -2376,7 +2401,7 @@ login backend = mavis
 user = mary { login = mavis }
      __________________________________________________________
 
-4.3.7.14. Configuring Expiry Dates
+4.3.8.14. Configuring Expiry Dates
 
    An entry of the form:
 user = lol {
@@ -2398,7 +2423,7 @@ user = lol {
    activates a profile at the given date.
      __________________________________________________________
 
-4.3.7.15. Configuring Authentication on the NAS
+4.3.8.15. Configuring Authentication on the NAS
 
    On the NAS, to configure login authentication, try
 aaa new-model
@@ -2431,7 +2456,7 @@ aaa authentication login default group tacacs+ local
    way out.
      __________________________________________________________
 
-4.3.7.16. Configuring Authorization
+4.3.8.16. Configuring Authorization
 
    Authorization must be configured on both the NAS and the daemon
    to operate correctly. By default, the NAS will allow everything
@@ -2448,7 +2473,7 @@ aaa authentication login default group tacacs+ local
    parts: commands and services.
      __________________________________________________________
 
-4.3.7.17. Authorizing Commands
+4.3.8.17. Authorizing Commands
 
    Exec commands are those commands which are typed at a Cisco
    exec prompt. When authorization is requested by the NAS, the
@@ -2548,7 +2573,7 @@ user=fred {
    NAS-local privileged enable levels on the NAS itself.
      __________________________________________________________
 
-4.3.7.17.1. Command Expansion
+4.3.8.17.1. Command Expansion
 
    For command authorization, the Cisco NAS expands all commands
    to their full names e.g. when you type config t on the NAS,
@@ -2586,7 +2611,7 @@ user = lol { service = shell { default attribute = permit } }
    create default behavior.
      __________________________________________________________
 
-4.3.7.18. Authorizing EXEC (SHELL) Startup
+4.3.8.18. Authorizing EXEC (SHELL) Startup
 
    You can supply some parameters whenever an shell starts, e.g.
    an autocommand, a dialback string or a connection access list
@@ -2628,7 +2653,7 @@ authorization exec authorlist
    list, or simply default.
      __________________________________________________________
 
-4.3.7.19. Authorizing EXEC, SLIP, PPP and ARAP services
+4.3.8.19. Authorizing EXEC, SLIP, PPP and ARAP services
 
    Authorizing EXEC, SLIP, PPP and ARAP services is done quite
    differently from command authorization.
@@ -2657,7 +2682,7 @@ debug aaa authorization
    to issue a terminal monitor command to see debug output.
      __________________________________________________________
 
-4.3.7.20. The Authorization Process
+4.3.8.20. The Authorization Process
 
    Authorizing a single session can result in multiple requests
    being sent to the daemon. For example, in order to authorize a
@@ -2691,7 +2716,7 @@ debug aaa authorization
        they shut down PPP instead.
      __________________________________________________________
 
-4.3.7.21. Authorization Relies on Authentication
+4.3.8.21. Authorization Relies on Authentication
 
    Since we pretty much rely on having a username in authorization
    requests to decide which addresses etc. to hand out, it is
@@ -2721,7 +2746,7 @@ int async 1
    missing.
      __________________________________________________________
 
-4.3.7.22. Configuring Service Authorization
+4.3.8.22. Configuring Service Authorization
 
    A list of AV pairs is placed in the daemon's configuration file
    in order to authorize services. The daemon compares each NAS AV
@@ -2731,7 +2756,7 @@ int async 1
    restricting what the user is permitted to do.
      __________________________________________________________
 
-4.3.7.22.1. The Authorization Algorithm
+4.3.8.22.1. The Authorization Algorithm
 
    The complete algorithm by which the daemon processes its
    configured AV pairs against the list the NAS sends, is given
@@ -2775,7 +2800,7 @@ int async 1
        for each mandatory attribute).
      __________________________________________________________
 
-4.3.7.22.2. Recursive Authorization
+4.3.8.22.2. Recursive Authorization
 
    Remember that authorization is also recursive over groups.
    Thus, if you place a user in a group, the daemon will look in
@@ -2783,7 +2808,7 @@ int async 1
    in the user declaration.
      __________________________________________________________
 
-4.3.7.23. Examples
+4.3.8.23. Examples
 
 host = 0.0.0.0/0 {
     key = "your key here"
@@ -2853,7 +2878,7 @@ user = wilma {
 }
      __________________________________________________________
 
-4.3.7.24. Configuring Authorization on the NAS
+4.3.8.24. Configuring Authorization on the NAS
 
    If authorization is not explicitly configured on the NAS, no
    authorization takes place, i.e. effectively, everything is

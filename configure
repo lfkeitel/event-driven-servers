@@ -7,12 +7,12 @@
 # (C) 2002-2011 by Marc Huber <Marc.Huber@web.de>
 # All rights reserved.
 #
-# $Id: configure,v 1.67 2019/06/14 19:20:25 marc Exp marc $
+# $Id: configure,v 1.68 2020/03/02 18:11:42 marc Exp $
 #
 
 use strict;
 
-my ($sysname, $release, $machine, $arch, $cwd);
+my ($sysname, $release, $machine, $cwd);
 
 if (eval("require POSIX")) {
 	($sysname, undef, $release, undef, $machine) = POSIX::uname();
@@ -25,8 +25,6 @@ if (eval("require POSIX")) {
 	$cwd = `pwd`;
 	chomp ($sysname, $release, $machine, $cwd);
 }
-$arch = `uname -i`;
-chomp ($arch);
 
 $sysname =~ tr/ \//--/;
 $machine =~ tr/ \//--/;
@@ -48,7 +46,7 @@ my @ALLDIRS = qw(mavis spawnd mavisd ftpd tac_plus tcprelay );
 my $DIRS_DEFAULT = join(" ", @DIRS_DEFAULT);
 my $ALLDIRS = join(" ", @ALLDIRS);
 
-my @options = qw(lwres pcre ssl zlib freeradius pam execinfo sctp curl ipc);
+my @options = qw(lwres pcre pcre2 ssl zlib freeradius pam execinfo sctp curl ipc);
 my %COMMENT;
 
 my $sbin = "sbin";
@@ -76,6 +74,12 @@ $COMMENT{"pcre"} =
 for path rewriting, and tac_plus may use it as an alternative to POSIX
 regular expression matching. You don't need this library if you don't
 care for these features.";
+
+$COMMENT{"pcre2"} =
+"ftpd can use the PCRE v2 (\"Perl Compatible Regular Expressions\" v2)
+library for path rewriting, and tac_plus may use it as an alternative to
+POSIX regular expression matching. You don't need this library if you
+don't care for these features.";
 
 $COMMENT{"freeradius"} =
 "If you have the freeradius-client library installed, you may authenticate
@@ -174,7 +178,7 @@ Default targets:
   $DIRS_DEFAULT
 
 The Makefile should be smart enough to figure out availability of most
-configuration options (OpenSSL, FreeRADIUS-Client, PCRE, LWRES, PAM, SCTP
+configuration options (OpenSSL, FreeRADIUS-Client, PCRE, LWRES, PAM, SCTP,
 ZLIB) by itself, so "./configure" without any arguments is sufficient
 in most cases.
 

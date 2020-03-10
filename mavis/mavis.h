@@ -341,7 +341,7 @@ struct common_data {
     int syslog_facility;
     u_int syslog_dflt:1;
     unsigned long long regex_match_case;
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
     int regex_pcre_flags;
 #endif
     int regex_posix_flags;

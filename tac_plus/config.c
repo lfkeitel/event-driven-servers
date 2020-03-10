@@ -81,10 +81,13 @@
 #ifdef WITH_PCRE
 # include <pcre.h>
 #endif
+#ifdef WITH_PCRE2
+# include <pcre2.h>
+#endif
 
 #include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.855 2019/12/03 20:49:49 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.860 2020/03/05 19:48:01 marc Exp marc $";
 
 struct tac_acllist {
     struct tac_acllist *next;
@@ -122,6 +125,9 @@ struct acl_element {
 	regex_t *r;
 #ifdef WITH_PCRE
 	pcre *p;
+#endif
+#ifdef WITH_PCRE2
+	pcre2_code *p;
 #endif
     } blob;
 };
@@ -211,10 +217,16 @@ static void parse_cmd_matches(struct sym *, tac_user *, struct node_cmd *);
 static void parse_svcs(struct sym *, tac_user *);
 static void parse_tag(struct sym *, tac_user *);
 static void parse_tac_acl(struct sym *);
+static void parse_rewrite(struct sym *, tac_realm *);
 
 static int compare_user(const void *a, const void *b)
 {
     return strcmp(((tac_user *) a)->name, ((tac_user *) b)->name);
+}
+
+static int compare_rewrite(const void *a, const void *b)
+{
+    return strcmp(((tac_rewrite *) a)->name, ((tac_rewrite *) b)->name);
 }
 
 static int compare_realm(const void *a, const void *b)
@@ -251,6 +263,7 @@ tac_realm *get_realm(char *name)
     r->hosttree = radix_new(NULL, NULL);
     r->usertable = RB_tree_new(compare_user, (void (*)(void *)) free_user);
     r->grouptable = RB_tree_new(compare_user, NULL);
+    r->rewrite = RB_tree_new(compare_rewrite, NULL);
 
     RB_insert(config.realms, r);
 
@@ -1079,6 +1092,10 @@ void parse_decls_real(struct sym *sym, tac_realm * r)
 		parse_error_expect(sym, S_redirect, S_equal, S_unknown);
 	    }
 	    continue;
+	case S_rewrite:
+	    sym_get(sym);
+	    parse_rewrite(sym, r);
+	    continue;
 	case S_syslog:
 	case S_proctitle:
 	case S_coredump:
@@ -1131,7 +1148,7 @@ void free_user(tac_user * user)
     radix_drop(&user->nac_range, NULL);
     RB_tree_delete(user->svcs);
     RB_tree_delete(user->svc_prohibit);
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
     mempool_destroy(user->pool_pcre);
 #endif
     mempool_destroy(user->pool_regex);
@@ -1163,7 +1180,7 @@ tac_user *new_user(char *name, enum token type, tac_realm * r)
     user->pool = pool;
     user->realm = r;
     if (type == S_user) {
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
 	user->pool_pcre = tac_pcrepool_create();
 #endif
 	user->pool_regex = tac_regpool_create();
@@ -2387,6 +2404,52 @@ static void parse_file(char *url, radixtree_t * ht)
     cfg_close(url, buf, bufsize);
 }
 
+static void parse_rewrite(struct sym *sym, tac_realm * r)
+{
+    tac_rewrite_expr **e;
+    tac_rewrite *rewrite = alloca(sizeof(tac_rewrite));
+    parse(sym, S_equal);
+    rewrite->name = sym->buf;
+    rewrite = RB_lookup(r->rewrite, rewrite);
+    if (!rewrite) {
+	rewrite = (tac_rewrite *) calloc(1, sizeof(tac_rewrite));
+	rewrite->name = strdup(sym->buf);
+	RB_insert(r->rewrite, rewrite);
+    }
+    e = &rewrite->expr;
+    while (*e)
+	e = &(*e)->next;
+    tac_sym_get(sym);
+    parse(sym, S_openbra);
+    while (sym->code == S_rewrite) {
+# ifdef WITH_PCRE2
+	int errcode = 0;
+	*e = (tac_rewrite_expr *) calloc(1, sizeof(tac_rewrite_expr));
+	sym->flag_parse_pcre = 1;
+	tac_sym_get(sym);
+	if (sym->code == S_slash) {
+	    PCRE2_SIZE erroffset;
+	    (*e)->code =
+		pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | common_data.regex_pcre_flags, &errcode, &erroffset, NULL);
+	    if (!(*e)->code) {
+		PCRE2_UCHAR buffer[256];
+		pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+		parse_error(sym, "In PCRE2 expression /%s/ at offset %d: %s", sym->buf, erroffset, buffer);
+	    }
+	    (*e)->name = strdup(sym->buf);
+	    tac_sym_get(sym);
+	    (*e)->replacement = (PCRE2_SPTR) strdup(sym->buf);
+	    e = &(*e)->next;
+	    tac_sym_get(sym);
+	}
+#else
+	parse_error(sym, "You're using a PCREv2-only feature, but this binary wasn't compiled with PCREv2 support.");
+#endif
+    }
+    sym->flag_parse_pcre = 0;
+    parse(sym, S_closebra);
+}
+
 static void parse_host(struct sym *sym, tac_realm * r)
 {
     tac_host *host = (tac_host *) calloc(1, sizeof(tac_host));
@@ -2822,6 +2885,19 @@ static void parse_host(struct sym *sym, tac_realm * r)
 	    parse(sym, S_equal);
 	    host->timeout = parse_seconds(sym);
 	    continue;
+	case S_rewrite:{
+		tac_rewrite *rewrite = alloca(sizeof(tac_rewrite));
+		rewrite->name = sym->buf;
+		tac_sym_get(sym);
+		parse(sym, S_user);
+		if (sym->code == S_equal)
+		    tac_sym_get(sym);
+		host->rewrite_user = RB_lookup(r->rewrite, rewrite);
+		if (!host->rewrite_user)
+		    parse_error(sym, "Rewrite set '%s' not found", sym->buf);
+		tac_sym_get(sym);
+		continue;
+	    }
 	case S_closebra:
 	    tac_sym_get(sym);
 	    return;
@@ -2965,7 +3041,7 @@ struct tac_acl_cache {
 
 static enum token tac_script_eval_r(tac_session *, char *, struct tac_script_action *, char **);
 
-static int match_regex(void *, char *, enum tac_acl_type);
+static int match_regex(tac_session * session, void *, char *, enum tac_acl_type, char *);
 
 enum token eval_tac_acl(tac_session * session, char *cmd, struct tac_acl *acl)
 {
@@ -3026,17 +3102,17 @@ enum token eval_tac_acl(tac_session * session, char *cmd, struct tac_acl *acl)
 			    break;
 			case T_regex_pcre:
 			case T_regex_posix:
-			    match = match_regex(e->blob.r, session->ctx->nas_address_ascii, e->type);
+			    match = match_regex(session, e->blob.r, session->ctx->nas_address_ascii, e->type, e->string);
 			    break;
 			case T_dns_regex_pcre:
 			    if (session->ctx->nas_dns_name && *session->ctx->nas_dns_name)
-				match = match_regex(e->blob.r, session->ctx->nas_dns_name, T_regex_pcre);
+				match = match_regex(session, e->blob.r, session->ctx->nas_dns_name, T_regex_pcre, e->string);
 			    else
 				skip = 1;
 			    break;
 			case T_dns_regex_posix:
 			    if (session->ctx->nas_dns_name && *session->ctx->nas_dns_name)
-				match = match_regex(e->blob.r, session->ctx->nas_dns_name, T_regex_posix);
+				match = match_regex(session, e->blob.r, session->ctx->nas_dns_name, T_regex_posix, e->string);
 			    else
 				skip = 1;
 			    break;
@@ -3082,17 +3158,17 @@ enum token eval_tac_acl(tac_session * session, char *cmd, struct tac_acl *acl)
 			    break;
 			case T_regex_pcre:
 			case T_regex_posix:
-			    match = match_regex(e->blob.r, session->nac_address_ascii, e->type);
+			    match = match_regex(session, e->blob.r, session->nac_address_ascii, e->type, e->string);
 			    break;
 			case T_dns_regex_pcre:
 			    if (session->nac_dns_name && *session->nac_dns_name)
-				match = match_regex(e->blob.r, session->nac_dns_name, T_regex_pcre);
+				match = match_regex(session, e->blob.r, session->nac_dns_name, T_regex_pcre, e->string);
 			    else
 				skip = 1;
 			    break;
 			case T_dns_regex_posix:
 			    if (session->nac_dns_name && *session->nac_dns_name)
-				match = match_regex(e->blob.r, session->nac_dns_name, T_regex_posix);
+				match = match_regex(session, e->blob.r, session->nac_dns_name, T_regex_posix, e->string);
 			    else
 				skip = 1;
 			    break;
@@ -3125,7 +3201,7 @@ enum token eval_tac_acl(tac_session * session, char *cmd, struct tac_acl *acl)
 		if (r->port) {
 		    struct acl_element *e = r->port;
 		    while (e) {
-			match = match_regex(e->blob.r, session->nas_port, e->type);
+			match = match_regex(session, e->blob.r, session->nas_port, e->type, e->string);
 
 			report(session, LOG_DEBUG,
 			       DEBUG_ACL_FLAG | DEBUG_REGEX_FLAG,
@@ -3155,7 +3231,7 @@ enum token eval_tac_acl(tac_session * session, char *cmd, struct tac_acl *acl)
 			switch (e->type) {
 			case T_regex_pcre:
 			case T_regex_posix:
-			    match = match_regex(e->blob.r, session->ctx->aaa_realm->name, e->type);
+			    match = match_regex(session, e->blob.r, session->ctx->aaa_realm->name, e->type, e->string);
 			    realmname = e->string;
 			    break;
 			case T_realm:
@@ -3590,7 +3666,22 @@ static enum tac_acl_type parse_regex(struct sym *sym, tac_user * user, void **rp
 	tac_sym_get(sym);
 	return T_regex_pcre;
 #else
+# ifdef WITH_PCRE2
+	PCRE2_SIZE erroffset;
+	*rptr = pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | common_data.regex_pcre_flags, &errcode, &erroffset, NULL);
+	if (*rptr) {
+	    if (user->pool_pcre)
+		RB_insert(user->pool_pcre, *rptr);
+	} else {
+	    PCRE2_UCHAR buffer[256];
+	    pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+	    parse_error(sym, "In PCRE2 expression /%s/ at offset %d: %s", sym->buf, erroffset, buffer);
+	}
+	tac_sym_get(sym);
+	return T_regex_pcre;
+# else
 	parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
     }
     *rptr = mempool_malloc(user->pool, sizeof(regex_t));
@@ -3619,7 +3710,19 @@ static enum tac_acl_type parse_aclregex(struct sym *sym, struct acl_element *ae)
 	tac_sym_get(sym);
 	return T_regex_pcre;
 #else
+# ifdef WITH_PCRE2
+	PCRE2_SIZE erroffset;
+	ae->blob.p = pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | common_data.regex_pcre_flags, &errcode, &erroffset, NULL);
+	if (!ae->blob.p) {
+	    PCRE2_UCHAR buffer[256];
+	    pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+	    parse_error(sym, "In PCRE2 expression /%s/ at offset %d: %s", sym->buf, erroffset, buffer);
+	}
+	tac_sym_get(sym);
+	return T_regex_pcre;
+# else
 	parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
     }
     ae->blob.r = calloc(1, sizeof(regex_t));
@@ -4114,7 +4217,7 @@ static int cfg_get_access_nac_func(tac_user * u)
 	while (*r) {
 	    int match;
 
-	    match = match_regex((*r)->blob.r, C.session->nac_address_ascii, (*r)->type);
+	    match = match_regex(C.session, (*r)->blob.r, C.session->nac_address_ascii, (*r)->type, (*r)->string);
 
 	    report(C.session, LOG_DEBUG,
 		   DEBUG_AUTHEN_FLAG | DEBUG_REGEX_FLAG,
@@ -4207,15 +4310,28 @@ int cfg_get_debug(tac_session * session, u_int * i)
 
 
 // 0: no match
-static int match_regex(void *reg, char *txt, enum tac_acl_type tat)
+static int match_regex(tac_session * session, void *reg, char *txt, enum tac_acl_type tat, char *string)
 {
+    int res = -1;
     switch (tat) {
     case T_regex_posix:
-	return 0 == regexec((regex_t *) reg, txt, 0, NULL, 0);
-#ifdef WITH_PCRE
+	res = regexec((regex_t *) reg, txt, 0, NULL, 0);
+	report(session, LOG_DEBUG, DEBUG_REGEX_FLAG, "regex: '%s' <=> '%s' = %d", string, txt, res);
+	return 0 == res;
     case T_regex_pcre:
-	return -1 < pcre_exec((pcre *) reg, NULL, txt, (int) strlen(txt), 0, 0, NULL, 0);
+#ifdef WITH_PCRE
+	res = pcre_exec((pcre *) reg, NULL, txt, (int) strlen(txt), 0, 0, NULL, 0);
+	report(session, LOG_DEBUG, DEBUG_REGEX_FLAG, "pcre: '%s' <=> '%s' = %d", string, txt, res);
 #endif
+#ifdef WITH_PCRE2
+	{
+	    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern((pcre2_code *) reg, NULL);
+	    res = pcre2_match((pcre2_code *) reg, (PCRE2_SPTR) txt, PCRE2_ZERO_TERMINATED, 0, 0, match_data, NULL);
+	    pcre2_match_data_free(match_data);
+	    report(session, LOG_DEBUG, DEBUG_REGEX_FLAG, "pcre2: '%s' <=> '%s' = %d", string, txt, res);
+	}
+#endif
+	return -1 < res;
     default:
 	return 0;
     }
@@ -4538,7 +4654,7 @@ static int get_cmd_node_func(tac_user * u)
 	struct node_perm *node;
 	/* command exists and permissions are defined */
 	for (node = cmd->perm; node; node = node->next) {
-	    int match = match_regex(node->regex, C.args, node->regex_type);
+	    int match = match_regex(session, node->regex, C.args, node->regex_type, node->name);
 
 	    report(session, LOG_DEBUG,
 		   DEBUG_AUTHOR_FLAG | DEBUG_REGEX_FLAG,
@@ -4602,6 +4718,7 @@ struct tac_script_cond_multi {
 struct tac_script_cond_single {
     enum token a;		// S_context, S_cmd, S_message, S_nac, S_nas, S_nacname, S_port, S_user
     void *v;			// v2, really
+    char *s;			// string
 };
 
 struct tac_script_cond {
@@ -4770,8 +4887,10 @@ static struct tac_script_cond *tac_script_cond_parse_r(tac_user * u, struct sym 
 		const char *errptr;
 		m->type = S_slash;
 		m->u.s.v = pcre_compile2(sym->buf, PCRE_MULTILINE | common_data.regex_pcre_flags, &errcode, &errptr, &erroffset, NULL);
-		if (u && u->pool_pcre)
+		if (u && u->pool_pcre) {
 		    RB_insert(u->pool_pcre, m->u.s.v);
+		    m->u.s.s = mempool_strdup(u->pool, sym->buf);
+		}
 
 		if (!m->u.s.v)
 		    parse_error(sym, "In PCRE expression /%s/ at offset %d: %s", sym->buf, erroffset, errptr);
@@ -4779,7 +4898,27 @@ static struct tac_script_cond *tac_script_cond_parse_r(tac_user * u, struct sym 
 		tac_sym_get(sym);
 		return p ? p : m;
 #else
+# ifdef WITH_PCRE2
+		PCRE2_SIZE erroffset;
+		m->type = S_slash;
+		m->u.s.v =
+		    pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | common_data.regex_pcre_flags, &errcode, &erroffset, NULL);
+		if (u && u->pool_pcre) {
+		    RB_insert(u->pool_pcre, m->u.s.v);
+		    m->u.s.s = mempool_strdup(u->pool, sym->buf);
+		}
+
+		if (!m->u.s.v) {
+		    PCRE2_UCHAR buffer[256];
+		    pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+		    parse_error(sym, "In PCRE2 expression /%s/ at offset %d: %s", sym->buf, erroffset, buffer);
+		}
+		sym->flag_parse_pcre = 0;
+		tac_sym_get(sym);
+		return p ? p : m;
+# else
 		parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
+# endif
 #endif
 	    }
 	    m->u.s.v = mempool_malloc(pool, sizeof(regex_t));
@@ -4993,10 +5132,20 @@ static int tac_script_cond_eval(tac_session * session, char *cmd, struct tac_scr
 	}
 	if (!v)
 	    return 0;
+	if (m->type == S_slash) {
+	    int res = -1;
 #ifdef WITH_PCRE
-	if (m->type == S_slash)
-	    return -1 < pcre_exec((pcre *) m->u.s.v, NULL, v, (int) strlen(v), 0, 0, NULL, 0);
+	    res = pcre_exec((pcre *) m->u.s.v, NULL, v, (int) strlen(v), 0, 0, NULL, 0);
+	    report(session, LOG_DEBUG, DEBUG_REGEX_FLAG, "pcre: '%s' <=> '%s' = %d", m->u.s.s, v, res);
 #endif
+#ifdef WITH_PCRE2
+	    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern((pcre2_code *) m->u.s.v, NULL);
+	    res = pcre2_match((pcre2_code *) m->u.s.v, (PCRE2_SPTR) v, PCRE2_ZERO_TERMINATED, 0, 0, match_data, NULL);
+	    pcre2_match_data_free(match_data);
+	    report(session, LOG_DEBUG, DEBUG_REGEX_FLAG, "pcre2: '%s' <=> '%s' = %d", m->u.s.s, v, res);
+#endif
+	    return -1 < res;
+	}
 	return !regexec((regex_t *) m->u.s.v, v, 0, NULL, 0);
     default:;
     }
@@ -5127,3 +5276,27 @@ static enum token tac_script_eval(tac_session * session, struct node_svc *svc, c
 
     return tac_script_eval_r(session, a, svc->script, format);
 }
+
+#ifdef WITH_PCRE2
+void tac_rewrite_user(tac_session * session)
+{
+    if (session->ctx->rewrite_user) {
+	int rc = -1;
+	tac_rewrite_expr *e = session->ctx->rewrite_user->expr;
+	for (; e && rc < 1; e = e->next) {
+	    PCRE2_SPTR replacement = e->replacement;
+	    PCRE2_UCHAR outbuf[1024];
+	    PCRE2_SIZE outlen = sizeof(outbuf);
+	    pcre2_match_data *match_data = pcre2_match_data_create_from_pattern(e->code, NULL);
+	    rc = pcre2_substitute(e->code, (PCRE2_SPTR8) session->username, PCRE2_ZERO_TERMINATED, 0, PCRE2_SUBSTITUTE_EXTENDED, match_data, NULL,
+				  replacement, PCRE2_ZERO_TERMINATED, outbuf, &outlen);
+	    pcre2_match_data_free(match_data);
+	    report(session, LOG_DEBUG, DEBUG_REGEX_FLAG, "pcre2: '%s' <=> '%s' = %d", e->name, session->username, rc);
+	    if (rc > 0) {
+		session->username = mempool_strndup(session->pool, outbuf, outlen);
+		report(session, LOG_DEBUG, DEBUG_REGEX_FLAG, "pcre2: setting username to '%s'", session->username);
+	    }
+	}
+    }
+}
+#endif

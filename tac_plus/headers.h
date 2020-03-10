@@ -56,7 +56,7 @@
    FITNESS FOR A PARTICULAR PURPOSE.
 */
 
-/* $Id: headers.h,v 1.415 2019/12/03 20:50:00 marc Exp marc $ */
+/* $Id: headers.h,v 1.416 2020/03/05 18:50:22 marc Exp $ */
 
 #ifndef __HEADERS_H_
 #define __HEADERS_H_
@@ -88,6 +88,10 @@
 #include <sysexits.h>
 #include <setjmp.h>
 
+#ifdef WITH_PCRE2
+#include <pcre2.h>
+#endif
+
 #include "misc/radix.h"
 #include "misc/rb.h"
 #include "misc/io_sched.h"
@@ -111,6 +115,10 @@ struct tac_acllist;
 
 struct realm;
 typedef struct realm tac_realm;
+struct rewrite_expr;
+typedef struct rewrite_expr tac_rewrite_expr;
+struct rewrite;
+typedef struct rewrite tac_rewrite;
 
 #define TAC_PLUS_PRIV_LVL_MIN 0x0
 #define TAC_PLUS_PRIV_LVL_MAX 0xf
@@ -168,6 +176,7 @@ typedef struct {
     tac_realm *realm;
     tac_realm *nac_realm;
     tac_realm *aaa_realm;
+    tac_rewrite *rewrite_user;
     u_int debug;
 } tac_host;
 
@@ -232,6 +241,20 @@ struct config {
     int log_matched_group:1;
 };
 
+struct rewrite_expr {
+    char *name;
+#ifdef WITH_PCRE2
+    pcre2_code *code;
+    PCRE2_SPTR replacement;
+#endif
+    struct rewrite_expr *next;
+};
+
+struct rewrite {
+    char *name;
+    tac_rewrite_expr *expr;
+};
+
 struct realm {
     char *name;
     rb_tree_t *acct;
@@ -242,6 +265,7 @@ struct realm {
     rb_tree_t *usertable;
     rb_tree_t *grouptable;
     rb_tree_t *logfile_templates;
+    rb_tree_t *rewrite;
     mavis_ctx *mcx;
 
      BISTATE(acct_inherited);
@@ -574,6 +598,7 @@ struct context {
     tac_realm *aaa_realm;
     tac_realm *nac_realm;
     tac_realm *realm;
+    tac_rewrite *rewrite_user;
     char *nas_dns_name;
     char *nas_address_ascii;
     struct in6_addr nas_address;	/* host byte order */
@@ -703,6 +728,11 @@ char *eval_taglist(tac_session *, tac_user *);
 void set_taglist(tac_session *);
 enum token eval_host_acl(tac_session *);
 struct upwdat *eval_passwd_acl(tac_session *);
+#ifdef WITH_PCRE2
+void tac_rewrite_user(tac_session *);
+#else
+#define tac_rewrite_user(A) /**/
+#endif
 
 static __inline__ int minimum(int a, int b)
 {
