@@ -99,7 +99,7 @@
 #include "spawnd_headers.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.175 2020/03/02 18:11:41 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.176 2020/03/11 13:00:09 marc Exp marc $";
 
 struct common_data common_data;
 
@@ -495,7 +495,7 @@ void getsym(struct sym *sym)
 	    return;
 	case '/':
 	    if (sym->flag_parse_pcre) {
-#ifdef WITH_PCRE
+#if defined(WITH_PCRE) || defined(WITH_PCRE2)
 		sym_start(sym);
 		sym_getchar(sym);
 		while (*sym->ch != '/') {
@@ -518,11 +518,7 @@ void getsym(struct sym *sym)
 		sym_getchar(sym);
 		return;
 #else
-# ifdef WITH_PCRE
-#  error FIXME
-# else
 		parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
-# endif
 #endif
 	    }
 	    /* Fallthrough */

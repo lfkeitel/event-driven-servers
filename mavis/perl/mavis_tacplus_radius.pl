@@ -4,7 +4,7 @@
 # (C)2001-2011 Marc Huber <Marc.Huber@web.de>
 # All rights reserved.
 #
-# $Id: mavis_tacplus_radius.pl,v 1.21 2016/07/13 17:38:36 marc Exp marc $
+# $Id: mavis_tacplus_radius.pl,v 1.22 2020/03/10 17:13:35 marc Exp marc $
 #
 # radius passwd backend for libmavis_external.so
 #
@@ -73,7 +73,9 @@ sub auth($$$$) {
 		$r->clear_attributes();
 		$r->add_attributes(
 			{ Name => 'User-Name', Value => $user, Type => 'string'},
-			{ Name => 'Password', Value => $pass, Type => 'string'},
+# Reference: https://metacpan.org/pod/Authen::Radius
+# 			{ Name => 'Password', Value => $pass, Type => 'string'},
+			{ Name => 'User-Password', Value => $pass, Type => 'string'},
 			{ Name => 'NAS-IP-Address', Value => $nasip, Type => 'ipaddr'}
 		);
 		$r->send_packet($ACCESS_REQUEST);
