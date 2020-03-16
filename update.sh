@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-UPSTREAM_FILE="$1"
+VERSION="$1"
+UPSTREAM_FILE="http://www.pro-bono-publico.de/projects/src/DEVEL.${VERSION}.tar.bz2"
 DOWNLOAD_FILE="$(mktemp)"
 
 wget -O "$DOWNLOAD_FILE" "$UPSTREAM_FILE"
