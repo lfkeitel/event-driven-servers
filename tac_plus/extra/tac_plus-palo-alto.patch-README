@@ -1,0 +1,16 @@
+Palo Alto TACACS+ is not compliant to the TACACS+ specification.
+
+All TACACS+ drafts up to now clearly state that authorization and accounting
+packets use a minor_version number of 0. Palo Alto uses minor_version 1.
+
+PA has to change their code to become compliant, and I see absolutely no
+reason for changing the server code just to add bug-compatibilty.
+
+Feel free to work around this issue by applying the tac_plus-palo-alto.patch.
+Author is Andy Gatward, see
+
+  https://groups.google.com/forum/#!topic/event-driven-servers/cAxoaXIYgig
+
+for details.
+
+Marc

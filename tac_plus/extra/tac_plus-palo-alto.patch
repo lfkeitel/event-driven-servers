@@ -1,0 +1,20 @@
+--- src/PROJECTS/tac_plus/packet.c	2016-06-06 17:15:25.000000000 +0000
++++ build/PROJECTS/tac_plus/packet.c	2017-08-15 10:13:00.867557538 +0000
+@@ -469,7 +469,7 @@
+ 	    break;
+ 
+ 	case TAC_PLUS_AUTHOR:
+-	    if (ctx->in->hdr.version == TAC_PLUS_VER_DEFAULT) {
++	    if (ctx->in->hdr.version == TAC_PLUS_VER_DEFAULT || ctx->in->hdr.version == TAC_PLUS_VER_ONE) {
+ 		if (author_pak_looks_bogus(&ctx->in->hdr)) {
+ 		    if ((more_keys = !ctx->key_fixed && ctx->key->next))
+ 			continue;
+@@ -482,7 +482,7 @@
+ 	    break;
+ 
+ 	case TAC_PLUS_ACCT:
+-	    if (ctx->in->hdr.version == TAC_PLUS_VER_DEFAULT) {
++	    if (ctx->in->hdr.version == TAC_PLUS_VER_DEFAULT || ctx->in->hdr.version == TAC_PLUS_VER_ONE) {
+ 		if (accounting_pak_looks_bogus(&ctx->in->hdr)) {
+ 		    if ((more_keys = !ctx->key_fixed && ctx->key->next))
+ 			continue;
