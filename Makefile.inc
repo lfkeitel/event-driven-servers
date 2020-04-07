@@ -501,8 +501,16 @@ endif
 # Check for crypt library:
 
 ifeq ($(HAS_LIBCRYPT),)
+	# check standard locations
 	ifneq ($(wildcard /lib$(LIBARCH)/libcrypt$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libcrypt$(SHLIB_EXT)* /lib$(LIBARCH)/*/libcrypt$(SHLIB_EXT)*),)
 		HAS_LIBCRYPT=1
+	endif
+	# evaluate ld search path
+	ifeq ($(HAS_LIBCRYPT),)
+		LDSD := $(shell ld --verbose 2>/dev/null | grep SEARCH_DIR | sed "s/SEARCH_DIR(\"=/ /g" | sed 's/");/\/libcrypt.so/g')
+		ifneq ($(wildcard $(LDSD)),)
+			HAS_LIBCRYPT=1
+		endif
 	endif
 endif
 
