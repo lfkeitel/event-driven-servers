@@ -31,4 +31,9 @@
 20200305 Add experimental support for username rewriting. Requires PCRE v2.
 20200311 PCRE2 related fixes
 20200402 Check ld search path for libcrypt.so, too
+20200407 tac_plus: change S_null to S_unkown to avoid segv on fatal parsing error
+20200422 pammavis: Fix authorization-only handling. Found & fixed by Kartik Subbarao <kartik.subbarao@gmail.com>
+20200426 mavis_tacplus_shadow.pl: Use custom fgrep instead of Perl grep
+20200428 libmavis_groups: Add PCRE2 default. Disabled by default, and untested for now.
+20200502 tac_plus: Adjust user filter to include wildcard, again.
 

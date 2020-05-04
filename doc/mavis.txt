@@ -2,7 +2,7 @@ MAVIS - Modular Attribute-Value Interchange System
 
 Marc Huber
 
-   $Id: manual.xml,v 1.73 2017/08/05 12:58:46 marc Exp marc $
+   $Id: manual.xml,v 1.74 2020/04/28 16:50:39 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -517,7 +517,7 @@ gid filter = 100,1000-1050
        Establishes a filter on the GID MAVIS attribute after name
        resolving. Example:
 group filter = /^com/
-     * groupx filter = [ not ] regex[,regex]*
+     * groups filter = [ not ] regex[,regex]*
        Establishes a filter on the GIDS MAVIS attribute after name
        resolving. Example:
 groups filter = /^com/

@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id: mavis_tacplus_ldap.pl,v 1.54 2017/04/14 06:03:44 marc Exp marc $
+# $Id: mavis_tacplus_ldap.pl,v 1.55 2020/05/01 17:18:34 marc Exp marc $
 #
 # mavis_tacplus_ldap.pl
 # (C)2001-2014 Marc Huber <Marc.Huber@web.de>
@@ -362,7 +362,7 @@ while ($in = <>) {
 		$V[AV_A_USER_RESPONSE] = "User not set.";
 		goto fatal;
 	}
-	if ($V[AV_A_USER] =~ /\(|\)|,|\||&/){
+	if ($V[AV_A_USER] =~ /\(|\)|,|\||&|\*/){
 		$V[AV_A_USER_RESPONSE] = "Username not valid.";
 		goto fatal;
 	}

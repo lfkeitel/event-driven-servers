@@ -59,7 +59,7 @@
 #include "headers.h"
 #include "misc/mymd5.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.143 2020/03/21 08:20:59 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.145 2020/04/29 18:22:46 marc Exp marc $";
 
 static void write_packet(struct context *, tac_pak *);
 static tac_session *new_session(struct context *, tac_pak_hdr *);
@@ -510,7 +510,7 @@ void tac_read(struct context *ctx, int cur)
 	}
     } while (more_keys);
 
-    if (ctx->key && (ctx->key->warn <= io_now.tv_sec) && !ctx->key_fixed)
+    if (ctx->key && ctx->key->warn && !ctx->key_fixed && (ctx->key->warn <= io_now.tv_sec))
 	report(NULL, LOG_INFO, ~0, "%s uses deprecated key", ctx->nas_address_ascii);
 
     ctx->key_fixed = 1;

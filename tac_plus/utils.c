@@ -49,7 +49,7 @@
 
 # include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: utils.c,v 1.107 2020/03/06 12:52:57 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: utils.c,v 1.108 2020/04/07 16:08:21 marc Exp marc $";
 
 void *mempool_malloc(rb_tree_t * pool, size_t size)
 {
@@ -753,10 +753,10 @@ void parse_log(struct sym *sym, tac_realm * r)
 		sym_get(sym);
 		continue;
 	    default:
-		parse_error_expect(sym, S_facility, S_level, S_ident, S_compliance, S_null);
+		parse_error_expect(sym, S_facility, S_level, S_ident, S_compliance, S_unknown);
 	    }
 	default:
-	    parse_error_expect(sym, S_destination, S_log, S_syslog, S_null);
+	    parse_error_expect(sym, S_destination, S_log, S_syslog, S_unknown);
 	}
     }
     sym_get(sym);

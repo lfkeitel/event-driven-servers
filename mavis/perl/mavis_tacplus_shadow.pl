@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id: mavis_tacplus_shadow.pl,v 1.10 2015/10/03 17:23:15 marc Exp marc $
+# $Id: mavis_tacplus_shadow.pl,v 1.13 2020/04/26 12:36:23 marc Exp marc $
 #
 # mavis_tacplus_shadow.pl
 # (C)2011 Marc Huber <Marc.Huber@web.de>
@@ -44,9 +44,9 @@ SHADOWFILE
 	Setting lastchange to 0 enforces password change at initial log-in.
 
 	Example:
-	marc:$1$e6E1l6SO$i2zC1p8fl/OhVBZDW.Jyg0:15218:0:99999:7:::
-	test:$1$q4Gv7dLP$Ri7kqg55RITH5oi5.g5kB.:15213:0:99999:7:::
-	test2:$1$8IwSoOmB$P.TeTeOkTh3OyV8JU3GlL.:0:0:99999:7:::
+	marc:$1$oAY9rv/9$NuyhEqJNSROHmLlwCXv0T.:15218:0:99999:7:::
+	test:$1$oAY9rv/9$NuyhEqJNSROHmLlwCXv0T.:15213:0:99999:7:::
+	test2:$1$oAY9rv/9$NuyhEqJNSROHmLlwCXv0T.:0:0:99999:7:::
 
 	Add new users using vipw or any other editor that performs file locking.
 
@@ -79,6 +79,8 @@ if (crypt('test', '$1$q5/vUEsR$') eq '$1$q5/vUEsR$jVwHmEw8zAmgkjMShLBg/.') {
 	import Crypt::Passwd::XS;
 	$hashid = '$1$';	# MD5
 	$have_crypt_passwd_xs = 1;
+} else {
+	print STDERR "Your system doesn't support MD5 hashes. Please consider running 'cpan install Crypt::Passwd::XS'\n";
 }
 
 sub mycrypt ($$) {
@@ -87,6 +89,19 @@ sub mycrypt ($$) {
 	} else {
 			crypt($_[0], $_[1]);
 	}
+}
+
+sub fgrep ($$$) {
+	my ($v, $L, $negate) = @_;
+	my @Q = ();
+	foreach my $line(@{$L}) {
+		my ($u, $r);
+		($u, $r) = split(/:/, $line, 2);
+		if (($negate && ($u ne $v)) || (!$negate && ($u eq $v))) {
+			push(@Q, $line);
+		}
+	}
+	return @Q;
 }
 
 umask 0177;
@@ -151,11 +166,11 @@ while ($in = <>) {
 
 	close $SHADOW if $V[AV_A_TACTYPE] eq AV_V_TACTYPE_AUTH;
 
-	my $line;
 	my $v = $V[AV_A_USER];
-	($line) = grep {/^$v:/} @L;
-
-	goto down unless defined $line;
+	my @Q = fgrep ($v, \@L, 0);
+	goto down if $#Q == -1;
+	goto fail unless $#Q == 0;
+	my $line = $Q[0];
 
 	my ($user, $passwd, $lastchange, $minage, $maxage, $warn, $remainder);
 	$warn = 0;
@@ -202,7 +217,8 @@ while ($in = <>) {
 			}
 		}
 
-		my @M = grep {!/^$v:/} @L;
+		my @M = fgrep ($v, \@L, 1);
+	    goto fail if $#M + 1 != $#L;
 
 		my $salt = "";
 		for (my $i = 0; $i < 16; $i++) {

@@ -87,7 +87,7 @@
 
 #include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.860 2020/03/05 19:48:01 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.862 2020/05/02 11:10:20 marc Exp marc $";
 
 struct tac_acllist {
     struct tac_acllist *next;
@@ -270,7 +270,7 @@ tac_realm *get_realm(char *name)
     r->group_realm = get_realm("default");
 
     if (!tac_acl_lookup("__internal__username_acl__")) {
-	char *acl = "acl script = __internal__username_acl__ { if (user =~ \"[]<>/()|=[]+\") deny permit }\n";
+	char *acl = "acl script = __internal__username_acl__ { if (user =~ \"[]<>/()|=[*\\\"':$]+\") deny permit }\n";
 	struct sym sym;
 	memset(&sym, 0, sizeof(sym));
 	sym.filename = "__internal__";

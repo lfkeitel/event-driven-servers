@@ -3,7 +3,7 @@
  * (C)2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_groups.c,v 1.21 2017/11/04 09:03:26 marc Exp marc $
+ * $Id: libmavis_groups.c,v 1.22 2020/04/28 16:47:29 marc Exp marc $
  *
  */
 
@@ -34,7 +34,7 @@
 
 #include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_groups.c,v 1.21 2017/11/04 09:03:26 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_groups.c,v 1.22 2020/04/28 16:47:29 marc Exp marc $";
 
 
 struct regex_list;
@@ -88,12 +88,19 @@ static void parse_filter_regex(struct sym *sym, struct regex_list **l)
 		parse_error(sym, "In PCRE expression /%s/ at offset %d: %s", sym->buf, erroffset, errptr);
 #else
 # ifdef WITH_PCRE2
+	    PCRE2_SIZE erroffset;
+	    (*l)->p = (void *)
+		pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | common_data.regex_pcre_flags, &errcode, &erroffset, NULL);
+	    if (!(*l)->p) {
+		PCRE2_UCHAR buffer[256];
+		pcre2_get_error_message(errcode, buffer, sizeof(buffer));
+		parse_error(sym, "In PCRE expression /%s/ at offset %d: %s", sym->buf, erroffset, buffer);
+	    }
 # else
 	    parse_error(sym, "You're using PCRE syntax, but this binary wasn't compiled with PCRE support.");
 # endif
 #endif
-	} else
-	{
+	} else {
 	    (*l)->type = S_regex;
 	    (*l)->p = Xcalloc(1, sizeof(regex_t));
 	    errcode = regcomp((regex_t *) (*l)->p, sym->buf, REG_EXTENDED | REG_NOSUB | REG_NEWLINE | common_data.regex_posix_flags);
@@ -221,12 +228,22 @@ static int good_gid(struct gid_list *l, u_long gid)
 
 static int rxmatch(void *v, char *s, enum token token)
 {
+#ifdef WHITH_PCRE2
+    int pcre_res = 0;
+    pcre2_match_data *match_data = NULL;
+#endif
     switch (token) {
 #ifdef WITH_PCRE
     case S_slash:
 	return -1 < pcre_exec((pcre *) v, NULL, s, strlen(s), 0, 0, NULL, 0);
 #else
 # ifdef WHITH_PCRE2
+	match_data = pcre2_match_data_create_from_pattern((pcre2_code *) v, NULL);
+	pcre_res = pcre2_match((pcre2_code *) v, (PCRE2_SPTR8) s, PCRE2_ZERO_TERMINATED, 0, 0, match_data, NULL);
+	if (pcre_res < 0 && pcre_res != PCRE2_ERROR_NOMATCH) {
+	    report_cfg_error(LOG_INFO, ~0, "PCRE2 matching error: %d", pcre_res);
+	}
+	pcre2_match_data_free(match_data);
 # endif
 #endif
     default:
@@ -323,8 +340,11 @@ static void drop_gr(struct regex_list *r)
 	if (r->type == S_slash)
 	    pcre_free(r->p);
 	else
-# if WITH_PCRE2
-#  error FIXME
+#else
+# ifdef WITH_PCRE2
+	if (r->type == S_slash)
+	    pcre2_code_free(r->p);
+	else
 # endif
 #endif
 	    regfree(r->p);
