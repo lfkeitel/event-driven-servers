@@ -2,7 +2,7 @@
  * ssl_init.c
  * (C)1999-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: ssl_init.c,v 1.12 2015/03/14 06:11:30 marc Exp marc $
+ * $Id: ssl_init.c,v 1.13 2020/06/06 12:08:32 marc Exp marc $
  *
  */
 
@@ -15,7 +15,7 @@
 #include <openssl/ssl.h>
 #include <openssl/err.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: ssl_init.c,v 1.12 2015/03/14 06:11:30 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: ssl_init.c,v 1.13 2020/06/06 12:08:32 marc Exp marc $";
 
 static void logssl(char *s)
 {
@@ -57,7 +57,20 @@ SSL_CTX *ssl_init(char *cert_file, char *key_file, char *pem_phrase, char *ciphe
 #endif
     SSL_CTX_set_options(ctx, SSL_OP_ALL);
     if (SSL_CTX_need_tmp_RSA(ctx)) {
-	RSA *rsa = RSA_generate_key(512, RSA_F4, NULL, NULL);
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+	RSA *rsa = RSA_generate_key(2048, RSA_F4, NULL, NULL);
+#else
+	RSA *rsa = RSA_new();
+	if (rsa) {
+	    BIGNUM *e = BN_new();
+	    if (e) {
+		BN_set_word(e, RSA_F4);
+		if (!RSA_generate_key_ex(rsa, 2048, e, NULL))
+		    logssl("RSA_generate_key_ex");
+		BN_free(e);
+	    }
+	}
+#endif
 	if (!SSL_CTX_set_tmp_rsa(ctx, rsa))
 	    logssl("SSL_CTX_set_tmp_rsa");
 	RSA_free(rsa);

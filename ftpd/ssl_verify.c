@@ -2,7 +2,7 @@
  * ssl_verify.c
  * (C)2002-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: ssl_verify.c,v 1.13 2015/03/14 06:11:27 marc Exp marc $
+ * $Id: ssl_verify.c,v 1.14 2020/06/06 11:43:47 marc Exp marc $
  *
  */
 
@@ -12,7 +12,7 @@
 #include <openssl/ssl.h>
 #include <openssl/x509v3.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: ssl_verify.c,v 1.13 2015/03/14 06:11:27 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: ssl_verify.c,v 1.14 2020/06/06 11:43:47 marc Exp marc $";
 
 #if OPENSSL_VERSION_NUMBER >= 0x00907000L && !defined(OPENSSL_NO_X509_VERIFY)
 #include "headers.h"
@@ -21,16 +21,25 @@ static const char rcsid[] __attribute__ ((used)) = "$Id: ssl_verify.c,v 1.13 201
 /* return value: != 0: Certificate verified */
 static int app_verify_cb(X509_STORE_CTX * ctx, void *app_ctx)
 {
-    if (ctx->cert && X509_verify_cert(ctx)) {
+#if OPENSSL_VERSION_NUMBER < 0x10100000
+    X509 *cert = ctx->cert;
+#else
+    X509 *cert = X509_STORE_CTX_get0_cert(ctx);
+#endif
+    if (cert && (X509_verify_cert(ctx) == 1)) {
 	char buf[256];
-	char *s = X509_NAME_oneline(X509_get_subject_name(ctx->cert),
+	char *s = X509_NAME_oneline(X509_get_subject_name(cert),
 				    buf, (int) sizeof(buf));
 	if (s) {
 #ifdef UNTESTED_CODE
 	    STACK_OF(GENERAL_NAME) * gns;
 #endif
 	    strset(&((struct context *) app_ctx)->certsubj, s);
+#if OPENSSL_VERSION_NUMBER < 0x10100000
 	    ((struct context *) app_ctx)->certdepth = ctx->error_depth;
+#else
+	    ((struct context *) app_ctx)->certdepth = X509_STORE_CTX_get_error_depth(ctx);
+#endif
 	    /* logmsg ("peer cert subj: %s depth: %d", s, ctx->error_depth); */
 
 #ifdef UNTESTED_CODE
@@ -66,7 +75,11 @@ static int verify_cb(int ok, X509_STORE_CTX * ctx)
 				    (int) sizeof(buf));
 
 	if (s)
+#if OPENSSL_VERSION_NUMBER < 0x10100000
 	    logmsg("peer cert subj: %s depth: %d error: %d", s, ctx->error_depth, ctx->error);
+#else
+	    logmsg("peer cert subj: %s depth: %d error: %d", s, X509_STORE_CTX_get_error_depth(ctx), X509_STORE_CTX_get_error(ctx));
+#endif
 
     }
     return ok;

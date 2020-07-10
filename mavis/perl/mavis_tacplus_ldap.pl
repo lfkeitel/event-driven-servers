@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id: mavis_tacplus_ldap.pl,v 1.55 2020/05/01 17:18:34 marc Exp marc $
+# $Id: mavis_tacplus_ldap.pl,v 1.57 2020/05/31 11:14:51 marc Exp marc $
 #
 # mavis_tacplus_ldap.pl
 # (C)2001-2014 Marc Huber <Marc.Huber@web.de>
@@ -394,6 +394,11 @@ while ($in = <>) {
 		}
 	}
 
+	my $retry;
+	$retry = $ldap ? 1 : undef;
+
+  retry_once:
+
 	unless ($ldap) {
 		$ldap = Net::LDAP->new($LDAP_HOSTS, timeout=>5);
 		unless ($ldap) {
@@ -410,6 +415,13 @@ while ($in = <>) {
 	}
 	my $authdn = undef;
 	my $mesg = $ldap->bind(@LDAP_BIND);
+	if ($mesg->code && defined($retry)) {
+		$retry = undef;
+		$ldap->unbind;
+		$ldap->disconnect;
+		$ldap = undef;
+		goto retry_once;
+	}
 	if ($mesg->code){
 		$V[AV_A_USER_RESPONSE] = $mesg->error . " (" . __LINE__ . ")";
 		goto fatal;
@@ -624,7 +636,6 @@ fatal:
 		$ldap->disconnect;
 		$ldap = undef;
 	}
-	goto bye;
 
 bye:
 	if (!defined($flag_cacheconn) && defined($ldap)) {

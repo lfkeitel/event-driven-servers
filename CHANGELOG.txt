@@ -36,4 +36,8 @@
 20200426 mavis_tacplus_shadow.pl: Use custom fgrep instead of Perl grep
 20200428 libmavis_groups: Add PCRE2 default. Disabled by default, and untested for now.
 20200502 tac_plus: Adjust user filter to include wildcard, again.
+20200523 mavis_tacplus_ldap.pl, mavis_ldap_authonly.pl: Improve handling of broken LDAP connections
+20200602 ftpd/h_site_checksum.c: add untested support for OpenSSL >= 1.1.0
+20200606 ftpd: more changes to support OpenSSL >= 1.1.0
+20200620 tac_plus: Always use TAC_PLUS_AUTHEN_STATUS_GETDATA in password change dialog when asking for old password. Merely cosmetic, no functional change.
 

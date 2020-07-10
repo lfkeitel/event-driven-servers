@@ -997,7 +997,7 @@ static void do_ascii_login(tac_session * session)
 	    && (!session->password[0] && (pw_ix == PW_MAVIS || session->ctx->aaa_realm->mavis_userdb))) {
 	    mempool_free(session->pool, &session->password);
 	    session->authen_data->authfn = do_chpass;
-	    send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_GETPASS,
+	    send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_GETDATA,
 			      "Entering password change dialog\n\n" "Old password: ", 0, NULL, 0, TAC_PLUS_REPLY_FLAG_NOECHO);
 	    return;
 	}

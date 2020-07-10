@@ -58,7 +58,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.285 2020/03/05 18:50:22 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.285 2020/03/05 18:50:22 marc Exp marc $";
 
 struct author_data {
     char *server_msg;		/* user message (optional) */

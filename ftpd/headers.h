@@ -3,7 +3,7 @@
  * (C)1997-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: headers.h,v 1.30 2011/08/06 20:28:33 marc Exp marc $
+ * $Id: headers.h,v 1.32 2020/06/02 17:31:20 marc Exp marc $
  *
  */
 
@@ -654,7 +654,7 @@ struct context {
 	u_int crc32;
 	myMD5_CTX md5context;
 #  ifdef WITH_SSL
-	EVP_MD_CTX mdctx;
+	EVP_MD_CTX *mdctx;
 #  endif
     } checksum;
     set64 requests;

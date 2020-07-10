@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id: mavis_ldap_authonly.pl,v 1.17 2015/10/03 17:23:15 marc Exp marc $
+# $Id: mavis_ldap_authonly.pl,v 1.19 2020/05/31 11:14:57 marc Exp marc $
 #
 # mavis_ldap_authonly.pl
 # (C)2001-2010 Marc Huber <Marc.Huber@web.de>
@@ -26,8 +26,8 @@ use Mavis;
 my $LDAP_HOSTS	= ['ldap03', 'ldap04', 'ldap01', 'ldap02'];
 my @LDAP_BIND = ();
 my $LDAP_BASE	= 'ou=staff,dc=example,dc=com';
-my $LDAP_FILTER	= '(uid=%s)';
 my $LDAP_SCOPE	= 'sub';
+my $LDAP_FILTER	= '(uid=%s)';
 my $use_tls = undef;
 my $flag_cacheconn		= undef;
 
@@ -81,7 +81,7 @@ while ($in = <>) {
 		$V[AV_A_USER_RESPONSE] = "User not set.";
 		goto fatal;
 	}
-	if ($V[AV_A_USER] =~ /\(|\)|,|\||&/){
+	if ($V[AV_A_USER] =~ /\(|\)|,|\||&|\*/){
 		$V[AV_A_USER_RESPONSE] = "Username not valid.";
 		goto fatal;
 	}
@@ -109,6 +109,11 @@ while ($in = <>) {
 		}
 	}
 
+	my $retry;
+	$retry = $ldap ? 1 : undef;
+
+  retry_once:
+
 	unless ($ldap) {
 		$ldap = Net::LDAP->new($LDAP_HOSTS);
 		unless ($ldap) {
@@ -127,6 +132,13 @@ while ($in = <>) {
 	}
 	my $authdn = undef;
 	my $mesg = $ldap->bind(@LDAP_BIND);
+	if ($mesg->code && defined($retry)) {
+		$retry = undef;
+		$ldap->unbind;
+		$ldap->disconnect;
+		$ldap = undef;
+		goto retry_once;
+	}
 	if ($mesg->code){
 		$V[AV_A_USER_RESPONSE] = $mesg->error;
 		goto fatal;

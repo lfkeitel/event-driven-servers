@@ -3,7 +3,7 @@
  * (C)1999-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: net.c,v 1.42 2016/06/05 12:19:16 marc Exp marc $
+ * $Id: net.c,v 1.44 2020/05/10 13:14:57 marc Exp marc $
  *
  */
 
@@ -21,7 +21,7 @@
 #include <sys/stat.h>
 #include "misc/net.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: net.c,v 1.42 2016/06/05 12:19:16 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: net.c,v 1.44 2020/05/10 13:14:57 marc Exp marc $";
 
 uint16_t su_get_port(sockaddr_union * sa)
 {
