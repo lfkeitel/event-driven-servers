@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id: mavis_ldap_authonly.pl,v 1.19 2020/05/31 11:14:57 marc Exp marc $
+# $Id: mavis_ldap_authonly.pl,v 1.20 2020/11/06 09:11:57 marc Exp marc $
 #
 # mavis_ldap_authonly.pl
 # (C)2001-2010 Marc Huber <Marc.Huber@web.de>
@@ -49,7 +49,7 @@ $use_tls = $ENV{'USE_TLS'} if exists $ENV{'USE_TLS'};
 
 use Net::LDAP;
 use Net::LDAP qw(LDAP_SUCCESS LDAP_SERVER_DOWN LDAP_TYPE_OR_VALUE_EXISTS
-	LDAP_NO_SUCH_ATTRIBUTE LDAP_INVALID_CREDENTIALS);
+	LDAP_NO_SUCH_ATTRIBUTE LDAP_INVALID_CREDENTIALS LDAP_CONSTRAINT_VIOLATION);
 
 if ((defined($use_tls) || ($ENV{'LDAP_HOSTS'} =~ /ldaps:/))
     && !eval("require IO::Socket::SSL")){
@@ -160,7 +160,7 @@ while ($in = <>) {
 			$V[AV_A_USER_RESPONSE] = $mesg->error;
 			$V[AV_A_RESULT] = AV_V_RESULT_ERROR;
 			$V[AV_A_RESULT] = AV_V_RESULT_FAIL
-				if $mesg->code == LDAP_INVALID_CREDENTIALS;
+				if ($mesg->code == LDAP_INVALID_CREDENTIALS || $mesg->code == LDAP_CONSTRAINT_VIOLATION);
 			$result = MAVIS_FINAL;
 			$ldap->unbind;
 			$ldap->disconnect;

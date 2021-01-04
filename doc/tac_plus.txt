@@ -2,7 +2,7 @@ TACACS+
 
 Marc Huber
 
-   $Id: manual.xml,v 1.406 2020/03/05 19:30:36 marc Exp marc $
+   $Id: manual.xml,v 1.429 2020/12/29 09:21:14 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -106,8 +106,8 @@ Marc Huber
      * CLI context aware. At the time of writing this, no other
        TACACS+ daemon is.
      * Both IPv4 and IPv6 are fully supported.
-     * Compliant to latest TACACS+ protocol specification (draft
-       1.78)
+     * Compliant to the original TACACS+ protocol specification
+       (draft 1.78).
      __________________________________________________________
 
 1.1. Download
@@ -1321,7 +1321,19 @@ aaa authentication enable default group tacacs+ enable
        profile for this option to take effect.
      __________________________________________________________
 
-4.3.3.3. Banners and Messages
+4.3.3.3. Authorization
+
+   The following authorization related directives are available at
+   host object level:
+
+     * permit if-authenticated = ( yes | no )
+       This will cause authorization for users unknown to the
+       daemon to succeed (e.g. when logging in locally while the
+       daemon is down or while initially configuring TACACS+
+       support and messing up).
+     __________________________________________________________
+
+4.3.3.4. Banners and Messages
 
    The daemon allows for various banners to be diplayed to the
    user:
@@ -1340,7 +1352,6 @@ aaa authentication enable default group tacacs+ enable
    The time when those texts get displayed largely depends on the
    actual login method:
 
-   Table 1. Banners and Messages
    Context Directive Login via Telnet Login via SSHv1 Login via
    SSHv2
    host welcome banner
@@ -1392,7 +1403,31 @@ aaa authentication enable default group tacacs+ enable
   }
      __________________________________________________________
 
-4.3.3.4. Inheritance and Hosts
+4.3.3.5. Workarounds for Client Bugs
+
+   The directive
+
+   client bug = value
+
+   may improve compatibility with clients that violate the
+   protocol. Currently, the following bit values (yes, you can use
+   bitwise OR here) are recognized:
+
+   Bit Value Description
+   0 1 Ignore invalid AUTHEN/START data, seen with ZTE devices
+   that put their MAC address there.
+   1 2 Accept version 1 for authorization and accounting packets,
+   seen with Palo Alto systems.
+
+   Example:
+  host = ... {
+    ...
+    client bug = 2
+    ...
+  }
+     __________________________________________________________
+
+4.3.3.6. Inheritance and Hosts
 
    For host lookups, the daemon looks for the most specific host
    definition first. If that definition (or the requested value)
@@ -1440,7 +1475,7 @@ aaa authentication enable default group tacacs+ enable
     inherit = no
      __________________________________________________________
 
-4.3.3.5. Railroad Diagrams
+4.3.3.7. Railroad Diagrams
 
    [HostDecl.eps]
 
@@ -1455,7 +1490,7 @@ aaa authentication enable default group tacacs+ enable
    Railroad diagram: EnableExpr
      __________________________________________________________
 
-4.3.3.6. Example
+4.3.3.8. Example
 
 host = 10.0.0.0/8 {
     name = customer1
@@ -1698,14 +1733,10 @@ login = clear Ci5c0
      * ms-chap = ( clearpassword | permit | deny )
        For MS-CHAP authentication, a cleartext password is
        required.
-     * opap = ( clearpassword | permit | deny )
-       For outgoing PAP authentication, a cleartext password is
-       required.
      * password = ( clearpassword | permit | deny )
-       This directive sets all previously undefined passwords
-       (with the exception of OPAP) to the given cleartext
-       password. This directive is retained for backwards
-       compatibility only, and usage is deprecated.
+       This directive sets all previously undefined passwords to
+       the given cleartext password. This directive is retained
+       for backwards compatibility only, and usage is deprecated.
      * password [ acl [ not ] acl ] { ... }
        This directive allows specification of ACL-dependent
        passwords. Example:
@@ -2032,8 +2063,16 @@ user = fred {
      * acl = ( [ permit ] | deny ) [ not ] acl
        Just as user and group profiles, services can be restricted
        by using ACLs.
-     * ( set | optional ) attribute = value
-       Defines mandatory and optional attribute-value pairs.
+     * ( set | add | optional ) attribute = value
+       Defines mandatory and optional attribute-value pairs:
+          + set unconditionally returns a mandatory AV pair to the
+            NAS
+          + optional returns a NAS-requested (and perhaps
+            modified) optional AV pair to the NAS unless the
+            attribute was already in the mandatory list
+          + add returns an optional AV pair to the client even if
+            the client didn't request it (and it was neither in
+            the mandatory nor optional list)
        Example:
 set priv-lvl = 15
        For a detailed description on mandatory and optional
@@ -2370,7 +2409,6 @@ user = mary {
     arap = clear "arap password"
     chap = clear "chap password"
     pap  = clear "inbound pap password"
-    opap = clear "outbound pap password"
     login = crypt XQj4892fjk
 }
 
@@ -2798,6 +2836,10 @@ int async 1
        DAEMON AV pair, if there is no attribute match already in
        the output list, add the AV pair (but add only ONE AV pair
        for each mandatory attribute).
+    4. After all AV pairs have been processed, for each optional
+       unrequested DAEMON AV pair, if there is no attribute match
+       already in the output list, add that AV pair (but add only
+       ONE AV pair for each optional attribute).
      __________________________________________________________
 
 4.3.8.22.2. Recursive Authorization
@@ -2945,7 +2987,6 @@ user = admin {
    Its behaviour is controlled by a list of environmental
    variables:
 
-   Table 2. LDAP Backend Environment Variables
           Variable         Description
    LDAP_SERVER_TYPE
 
@@ -3423,40 +3464,56 @@ debug = REGEX
    Multiple trace options may be specified. Example:
 debug = REGEX CMD
 
-   The debugging options available are summarized in the Debug and
-   Trace Values table.
+   Trace options may be removed by prefixing them with-. Example:
+debug = ALL -PARSE
 
-   Table 3. Debug and Trace Values
-   Bit   Value     Name            Description
-   0   1          PARSE   Configuration file parsing
-   1   2          AUTHOR  Authorization related
-   2   4          AUTHEN  Authentication related
-   3   8          ACCT    Accounting related
-   4   16         CONFIG  Configuration related
-   5   32         PACKET  Packet dump
-   6   64         HEX     Packet hex-dump
-   7   128        LOCK    File locking
-   8   256        REGEX   Regular expressions
-   9   512        ACL     Access Control Lists
-   10  1024       RADIUS  unused
-   11  2048       CMD     Command lookups
-   12  4096       BUFFER  Buffer handling
-   13  8192       PROC    Procedural traces
-   14  16384      NET     Network related
-   15  32768      PATH    File system path related
-   16  65536      CONTROL Control connection related
-   17  131072     INDEX   Directory index related
-   18  262144     AV      Attribute-Value pair handling
-   19  524288     MAVIS   MAVIS related
-   20  1048576    LWRES   DNS related
-   31  2147483648 NONE    Disable debugging
+   The debugging options available are summarized in the following
+   table:
+
+   Bit Value Name Description
+   0 1 PARSE Configuration file parsing
+   1 2 AUTHOR Authorization related
+   2 4 AUTHEN Authentication related
+   3 8 ACCT Accounting related
+   4 16 CONFIG Configuration related
+   5 32 PACKET Packet dump
+   6 64 HEX Packet hex-dump
+   7 128 LOCK File locking
+   8 256 REGEX Regular expressions
+   9 512 ACL Access Control Lists
+   10 1024 RADIUS unused
+   11 2048 CMD Command lookups
+   12 4096 BUFFER Buffer handling
+   13 8192 PROC Procedural traces
+   14 16384 NET Network related
+   15 32768 PATH File system path related
+   16 65536 CONTROL Control connection related
+   17 131072 INDEX Directory index related
+   18 262144 AV Attribute-Value pair handling
+   19 524288 MAVIS MAVIS related
+   20 1048576 LWRES DNS related
+   21 2097152 USERINPUT Show user input (this may include
+   passwords)
+   31 2147483648 NONE Disable debugging
 
    Some of those debugging options are not used and trigger no
    output at all.
 
-   [Debug.eps]
+   Tip Debugging User Input
 
-   Railroad diagram: Debug
+
+   The daemon will (starting with snapshot 202012051554) by
+   default no longer show user input from authentication packets
+   sent by the NAS. You can explicitly change this using the
+   USERINPUT debug flag. Something like
+debug = ALL
+
+   or using a numeric value will not work, it needs to be enabled
+   explicitly, e.g.:
+debug = ALL USERINPUT
+
+   Be prepared to see plain text user passwords if you enable this
+   option.
      __________________________________________________________
 
 7. Frequently Asked Questions
@@ -3537,10 +3594,11 @@ Router#
        revisions, the NAS sends the challenge information to the
        TACACS+ daemon and the daemon uses the cleartext password
        to generate the response and returns that.
-       The TACACS+ protocol includes specific protocol knowledge
-       for both ARAP and CHAP. (This version of the daemon
-       implementation no longer supports the SENDPASS mechanism.)
-       Note that the above doesn't apply to PAP. You can keep an
+       The original TACACS+ protocol included specific protocol
+       knowledge for both ARAP and CHAP. Please note that this
+       version of the daemon implementation no longer supports
+       SENDPASS, SENDAUTH and ARAP to comply to RFC8907.
+       However, the above doesn't apply to PAP. You can keep an
        inbound PAP password DES- or MD5-encrypted, since all you
        need to do with it is verify that the password the
        principal gave you is correct.
@@ -3573,12 +3631,6 @@ Router#
        Avoid using PAP if possible since it's not very secure. If
        you must use it, PAP passwords may be specified along with
        ARAP and CHAP passwords for each user.
-       For outbound PAP, where you are forced to send a password
-       to the remote host to identify yourself, there is now a
-       separate opap directive e.g.
-opap = clear OOOO
-       You use this to set the outbound PAP password. It must be a
-       cleartext password.
 
        Note Passwords
 
@@ -4011,7 +4063,6 @@ id = tac_plus {
         login = clear LLLL
         chap = clear CCCC
         pap = clear PPPP
-        opap = clear OOOO
         service = ppp {
             default protocol = permit
             protocol = lcp {

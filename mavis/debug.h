@@ -1,6 +1,6 @@
 /* debug.h (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: debug.h,v 1.11 2011/09/26 16:01:41 marc Exp marc $
+ * $Id: debug.h,v 1.13 2020/12/05 14:24:01 marc Exp marc $
  *
  */
 
@@ -46,7 +46,6 @@ void debug_setpid(void);
 #define DEBUG_BUFFER DEBUG_BUFFER_FLAG
 #define DEBUG_PROC_FLAG     (1<<13)	/* 8192 */
 #define DEBUG_PROC DEBUG_PROC_FLAG
-
 #define DEBUG_NET_FLAG      (1<<14)	/* 16k */
 #define DEBUG_NET	DEBUG_NET_FLAG
 #define DEBUG_PATH_FLAG      (1<<15)	/* 32k */
@@ -61,9 +60,11 @@ void debug_setpid(void);
 #define DEBUG_MAVIS DEBUG_MAVIS_FLAG
 #define DEBUG_LWRES_FLAG      (1<<20)	/* 1024k */
 #define DEBUG_LWRES DEBUG_LWRES_FLAG
+#define DEBUG_USERINPUT_FLAG      (1<<21)	/* 2048k */
+#define DEBUG_USERINPUT DEBUG_USERINPUT_FLAG
 
 #define DEBUG_NONE_FLAG     ((u_int)1<<31)	/* 2147483648 */
 
-#define DEBUG_ALL_FLAG	~DEBUG_NONE_FLAG
+#define DEBUG_ALL_FLAG	(~DEBUG_NONE_FLAG & ~DEBUG_USERINPUT_FLAG)
 #define DEBUG_ALL DEBUG_ALL_FLAG
 #endif

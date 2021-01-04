@@ -58,7 +58,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: dump.c,v 1.69 2016/06/06 17:15:25 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: dump.c,v 1.73 2020/12/26 15:35:11 marc Exp marc $";
 
 struct i2s {
     int key;
@@ -159,7 +159,7 @@ char *summarise_outgoing_packet_type(tac_pak_hdr * hdr)
     }
 }
 
-static void dump_header(tac_session * session, tac_pak_hdr * hdr)
+static void dump_header(tac_session * session, tac_pak_hdr * hdr, int bogus)
 {
     report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "key used: %s", session->ctx->key ? session->ctx->key->key : "<NULL>");
 
@@ -169,8 +169,28 @@ static void dump_header(tac_session * session, tac_pak_hdr * hdr)
 	   common_data.font_blue,
 	   hdr->flags & TAC_PLUS_UNENCRYPTED_FLAG ? "un" : "", hdr->flags & TAC_PLUS_SINGLE_CONNECT_FLAG ? " single-connect" : "", common_data.font_plain);
 
-    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "session id: %.8x data length: %d", (unsigned int) ntohl(hdr->session_id), (int) ntohl(hdr->datalength));
+    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "session id: %.8x, data length: %d", (unsigned int) ntohl(hdr->session_id), (int) ntohl(hdr->datalength));
 
+    if (!bogus && (hdr->seq_no & 1) && !(session->debug & DEBUG_USERINPUT_FLAG) && (hdr->type == TAC_PLUS_AUTHEN)) {
+	size_t n = ntohl(hdr->datalength);
+	size_t l;
+	if (hdr->seq_no == 1) {
+	    struct authen_start *start = tac_payload(hdr, struct authen_start *);
+	    l = start->data_len;
+	} else {
+	    struct authen_cont *cont = tac_payload(hdr, struct authen_cont *);
+	    l = ntohs(cont->user_msg_len) + ntohs(cont->user_data_len);
+	}
+	if (l) {
+	    char *t = alloca(n);
+	    if (t) {
+		memcpy(t, tac_payload(hdr, char *), n);
+		memset(t + n - l, '*', l);
+		report_string(session, LOG_DEBUG, DEBUG_HEX_FLAG, "packet body [partially masked]", t, n);
+		return;
+	    }
+	}
+    }
     report_string(session, LOG_DEBUG, DEBUG_HEX_FLAG, "packet body", tac_payload(hdr, char *), ntohl(hdr->datalength));
 }
 
@@ -181,10 +201,6 @@ static void dump_args(tac_session * session, u_char arg_cnt, char *p, unsigned c
     for (i = 0; i < arg_cnt; i++) {
 	char a[20];
 	snprintf(a, sizeof(a), "arg[%d]", i);
-#if 0
-	report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "arg[%d] (size: %d):", i, *sizep);
-	report_hex(session, LOG_DEBUG, DEBUG_PACKET_FLAG, (u_char *) p, *sizep);
-#endif
 	report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, a, p, *sizep);
 	p += *sizep;
 	sizep++;
@@ -192,23 +208,21 @@ static void dump_args(tac_session * session, u_char arg_cnt, char *p, unsigned c
 }
 
 /* Dump packets originated by a NAS */
-void dump_nas_pak(tac_session * session)
+void dump_nas_pak(tac_session * session, int bogus)
 {
     char *p;
     unsigned char *argsizep;
     tac_pak_hdr *hdr = &session->ctx->in->hdr;
 
     report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "---<start packet>---");
-    dump_header(session, hdr);
+    dump_header(session, hdr, bogus);
 
-    if (!(hdr->seq_no & 1))
-	report(session, LOG_ERR, DEBUG_PACKET_FLAG, "%s: Bad sequence number %d (should be %s)", session->ctx->nas_address_ascii, hdr->seq_no, "odd");
-    else
+    if (bogus) {
+	report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "Packet malformed, skipping detailed dump.");
+    } else {
 	switch (hdr->type) {
 	case TAC_PLUS_AUTHEN:
-	    if (authen_pak_looks_bogus(hdr))
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "Packet malformed, skipping detailed dump.");
-	    else if (hdr->seq_no == 1) {
+	    if (hdr->seq_no == 1) {
 		struct authen_start *start = tac_payload(hdr, struct authen_start *);
 
 		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "AUTHEN/START, priv_lvl=%d", start->priv_lvl);
@@ -224,28 +238,31 @@ void dump_nas_pak(tac_session * session)
 		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "port", p, start->port_len);
 		p += start->port_len;
 		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "rem_addr", p, start->rem_addr_len);
-		p += start->rem_addr_len;
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, start->data_len);
+		if (session->debug & DEBUG_USERINPUT_FLAG) {
+		    p += start->rem_addr_len;
+		    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, start->data_len);
+		}
 	    } else {
 		struct authen_cont *cont = tac_payload(hdr, struct authen_cont *);
 
 		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
 		       "AUTHEN/CONT user_msg_len=%d, user_data_len=%d", ntohs(cont->user_msg_len), ntohs(cont->user_data_len));
-		p = (char *) cont + TAC_AUTHEN_CONT_FIXED_FIELDS_SIZE;
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "user_msg", p, ntohs(cont->user_msg_len));
-		p += cont->user_msg_len;
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "user_data", p, ntohs(cont->user_data_len));
+		if (session->debug & DEBUG_USERINPUT_FLAG) {
+		    p = (char *) cont + TAC_AUTHEN_CONT_FIXED_FIELDS_SIZE;
+		    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "user_msg", p, ntohs(cont->user_msg_len));
+		    p += cont->user_msg_len;
+		    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "user_data", p, ntohs(cont->user_data_len));
+		}
 	    }
 	    break;
 	case TAC_PLUS_AUTHOR:
-	    if (author_pak_looks_bogus(hdr))
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "Packet malformed, skipping detailed dump.");
-	    else {
+	    {
 		struct author *author = tac_payload(hdr, struct author *);
 
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
-		       "AUTHOR priv_lvl=%d authen=%d method=%s (%d) svc=%d",
-		       author->priv_lvl, author->authen_type, i2s(map_method, author->authen_method), author->authen_method, author->service);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "AUTHOR, priv_lvl=%d", author->priv_lvl);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "authen_type=%s (%d)", i2s(map_type, author->authen_type), author->authen_type);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "authen_method=%s (%d)", i2s(map_method, author->authen_method), author->authen_method);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "service=%s (%d)", i2s(map_service, author->service), author->service);
 		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
 		       "user_len=%d port_len=%d rem_addr_len=%d arg_cnt=%d", author->user_len, author->port_len, author->rem_addr_len, author->arg_cnt);
 
@@ -262,14 +279,13 @@ void dump_nas_pak(tac_session * session)
 	    }
 	    break;
 	case TAC_PLUS_ACCT:
-	    if (accounting_pak_looks_bogus(hdr))
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "Packet malformed, skipping detailed dump.");
-	    else {
+	    {
 		struct acct *acct = tac_payload(hdr, struct acct *);
 
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
-		       "ACCT flags=0x%x method=%d priv_lvl=%d type=%d svc=%d",
-		       acct->flags, acct->authen_method, acct->priv_lvl, acct->authen_type, acct->authen_service);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "ACCT, priv_lvl=%d flags=0x%x", acct->priv_lvl, acct->flags);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "authen_type=%s (%d)", i2s(map_type, acct->authen_type), acct->authen_type);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "authen_method=%s (%d)", i2s(map_method, acct->authen_method), acct->authen_method);
+		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "service=%s (%d)", i2s(map_service, acct->authen_service), acct->authen_service);
 		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
 		       "user_len=%d port_len=%d rem_addr_len=%d arg_cnt=%d", acct->user_len, acct->port_len, acct->rem_addr_len, acct->arg_cnt);
 
@@ -288,6 +304,7 @@ void dump_nas_pak(tac_session * session)
 	default:
 	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "%s: unrecognized header type %d", __func__, hdr->type);
 	}
+    }
     report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "---<end packet>---");
 }
 
@@ -297,58 +314,55 @@ void dump_tacacs_pak(tac_session * session, tac_pak_hdr * hdr)
     char *p;
 
     report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "---<start packet>---");
-    dump_header(session, hdr);
+    dump_header(session, hdr, 0);
 
-    if (hdr->seq_no & 1)
-	report(session, LOG_ERR, DEBUG_PACKET_FLAG, "%s: Bad sequence number %d (should be %s)", session->ctx->nas_address_ascii, hdr->seq_no, "even");
-    else
-	switch (hdr->type) {
-	case TAC_PLUS_AUTHEN:
-	    {
-		struct authen_reply *authen = tac_payload(hdr, struct authen_reply *);
+    switch (hdr->type) {
+    case TAC_PLUS_AUTHEN:
+	{
+	    struct authen_reply *authen = tac_payload(hdr, struct authen_reply *);
 
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
-		       "AUTHEN status=%d (%s) flags=0x%x", authen->status, summarise_outgoing_packet_type(hdr), authen->flags);
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg_len=%d, data_len=%d", ntohs(authen->msg_len), ntohs(authen->data_len));
-		/* start of variable length data is here */
-		p = (char *) authen + TAC_AUTHEN_REPLY_FIXED_FIELDS_SIZE;
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg", p, ntohs(authen->msg_len));
-		p += ntohs(authen->msg_len);
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, ntohs(authen->data_len));
-	    }
-	    break;
-	case TAC_PLUS_AUTHOR:
-	    {
-		struct author_reply *author = tac_payload(hdr, struct author_reply *);
-		unsigned char *argsizep;
-
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "AUTHOR/REPLY status=%d (%s) ", author->status, summarise_outgoing_packet_type(hdr));
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
-		       "msg_len=%d, data_len=%d, arg_cnt=%d", ntohs(author->msg_len), ntohs(author->data_len), author->arg_cnt);
-		p = (char *) author + TAC_AUTHOR_REPLY_FIXED_FIELDS_SIZE;
-		argsizep = (unsigned char *) p;
-		p += author->arg_cnt;
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg", p, ntohs(author->msg_len));
-		p += ntohs(author->msg_len);
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, ntohs(author->data_len));
-		p += ntohs(author->data_len);
-		dump_args(session, author->arg_cnt, p, argsizep);
-	    }
-	    break;
-	case TAC_PLUS_ACCT:
-	    {
-		struct acct_reply *acct = tac_payload(hdr, struct acct_reply *);
-
-		report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
-		       "ACCT/REPLY status=%d, msg_len=%d, data_len=%d", acct->status, ntohs(acct->msg_len), ntohs(acct->data_len));
-		p = (char *) acct + TAC_ACCT_REPLY_FIXED_FIELDS_SIZE;
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg", p, ntohs(acct->msg_len));
-		p += ntohs(acct->msg_len);
-		report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, ntohs(acct->data_len));
-	    }
-	    break;
-	default:
-	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "%s: unrecognized header type %d", __func__, hdr->type);
+	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
+		   "AUTHEN status=%d (%s) flags=0x%x", authen->status, summarise_outgoing_packet_type(hdr), authen->flags);
+	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg_len=%d, data_len=%d", ntohs(authen->msg_len), ntohs(authen->data_len));
+	    /* start of variable length data is here */
+	    p = (char *) authen + TAC_AUTHEN_REPLY_FIXED_FIELDS_SIZE;
+	    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg", p, ntohs(authen->msg_len));
+	    p += ntohs(authen->msg_len);
+	    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, ntohs(authen->data_len));
 	}
+	break;
+    case TAC_PLUS_AUTHOR:
+	{
+	    struct author_reply *author = tac_payload(hdr, struct author_reply *);
+	    unsigned char *argsizep;
+
+	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "AUTHOR/REPLY status=%d (%s) ", author->status, summarise_outgoing_packet_type(hdr));
+	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
+		   "msg_len=%d, data_len=%d, arg_cnt=%d", ntohs(author->msg_len), ntohs(author->data_len), author->arg_cnt);
+	    p = (char *) author + TAC_AUTHOR_REPLY_FIXED_FIELDS_SIZE;
+	    argsizep = (unsigned char *) p;
+	    p += author->arg_cnt;
+	    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg", p, ntohs(author->msg_len));
+	    p += ntohs(author->msg_len);
+	    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, ntohs(author->data_len));
+	    p += ntohs(author->data_len);
+	    dump_args(session, author->arg_cnt, p, argsizep);
+	}
+	break;
+    case TAC_PLUS_ACCT:
+	{
+	    struct acct_reply *acct = tac_payload(hdr, struct acct_reply *);
+
+	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
+		   "ACCT/REPLY status=%d, msg_len=%d, data_len=%d", acct->status, ntohs(acct->msg_len), ntohs(acct->data_len));
+	    p = (char *) acct + TAC_ACCT_REPLY_FIXED_FIELDS_SIZE;
+	    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg", p, ntohs(acct->msg_len));
+	    p += ntohs(acct->msg_len);
+	    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "data", p, ntohs(acct->data_len));
+	}
+	break;
+    default:
+	report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "%s: unrecognized header type %d", __func__, hdr->type);
+    }
     report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "---<end packet>---");
 }

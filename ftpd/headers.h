@@ -3,7 +3,7 @@
  * (C)1997-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: headers.h,v 1.32 2020/06/02 17:31:20 marc Exp marc $
+ * $Id: headers.h,v 1.33 2020/12/06 19:31:31 marc Exp marc $
  *
  */
 
@@ -669,7 +669,7 @@ struct context {
     int count_files;
     int count_total;
 
-    char iac[3];
+    unsigned char iac[3];
 };
 
 struct service_req {

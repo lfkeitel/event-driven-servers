@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 1999-2016 Marc Huber (Marc.Huber@web.de)
+   Copyright (C) 1999-2020 Marc Huber (Marc.Huber@web.de)
    All rights reserved.
 
    Redistribution and use in source and binary  forms,  with or without
@@ -58,7 +58,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.285 2020/03/05 18:50:22 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: author.c,v 1.288 2020/12/26 15:35:11 marc Exp marc $";
 
 struct author_data {
     char *server_msg;		/* user message (optional) */
@@ -71,28 +71,6 @@ struct author_data {
 };
 
 static void do_author(tac_session *);
-
-int author_pak_looks_bogus(tac_pak_hdr * hdr)
-{
-    u_char *p;
-    int i;
-    u_int len;
-    struct author *pak = tac_payload(hdr, struct author *);
-    u_int datalength = ntohl(hdr->datalength);
-
-    /* start of variable length data is here */
-    p = (u_char *) pak + TAC_AUTHOR_REQ_FIXED_FIELDS_SIZE;
-
-    /* Length checks */
-    len = TAC_AUTHOR_REQ_FIXED_FIELDS_SIZE + pak->user_len + pak->port_len + pak->rem_addr_len + pak->arg_cnt;
-
-    for (i = 0; i < (int) pak->arg_cnt; i++)
-	len += p[i];
-
-    if (i != (int) pak->arg_cnt || len != datalength)
-	return -1;
-    return 0;
-}
 
 void author(tac_session * session, tac_pak_hdr * hdr)
 {
@@ -110,6 +88,8 @@ void author(tac_session * session, tac_pak_hdr * hdr)
     /* arg length data starts here */
     p += pak->arg_cnt;
 
+    session->authen_type = pak->authen_type;
+    session->authen_method = pak->authen_method;
     session->username = mempool_strndup(session->pool, p, (int) pak->user_len);
     session->tag = strchr(session->username, session->ctx->aaa_realm->separator);
     if (session->tag)
@@ -385,7 +365,7 @@ static void authorize_svc(tac_session * session, enum token svc, char *svcname, 
     int i, replaced = 0, added = 0, out_cnt = 0;
     char **out_args, **outp;
     enum token svc_dflt = S_unknown, attr_dflt = S_unknown;
-    rb_tree_t *tree_m_a, *tree_o_a, *tree_m_av, *tree_o_av;
+    rb_tree_t *tree_m_a, *tree_o_a, *tree_m_av, *tree_o_av, *tree_a_a, *tree_a_av;
     rb_node_t *r;
 
     if (bad_nas_args(session, data)) {
@@ -395,10 +375,12 @@ static void authorize_svc(tac_session * session, enum token svc, char *svcname, 
 
     tree_m_a = RB_tree_new((int (*)(const void *, const void *)) strcmp_a, NULL);
     tree_m_av = RB_tree_new((int (*)(const void *, const void *)) strcmp_av, NULL);
+    tree_a_a = RB_tree_new((int (*)(const void *, const void *)) strcmp_a, NULL);
+    tree_a_av = RB_tree_new((int (*)(const void *, const void *)) strcmp_av, NULL);
     tree_o_a = RB_tree_new((int (*)(const void *, const void *)) strcmp_a, NULL);
     tree_o_av = RB_tree_new((int (*)(const void *, const void *)) strcmp_av, NULL);
 
-    switch (cfg_get_svc_attrs(session, svc, svcname, protocol, tree_m_a, tree_o_a, tree_m_av, tree_o_av, &svc_dflt, &attr_dflt)) {
+    switch (cfg_get_svc_attrs(session, svc, svcname, protocol, tree_m_a, tree_a_a, tree_o_a, tree_m_av, tree_a_av, tree_o_av, &svc_dflt, &attr_dflt)) {
     case S_deny:
 	report(session, LOG_DEBUG, DEBUG_AUTHOR_FLAG,
 	       "%s@%s: svcname=%s protocol=%s denied", session->username, session->ctx->nas_address_ascii, svcname ? svcname : "", protocol ? protocol : "");
@@ -421,7 +403,7 @@ static void authorize_svc(tac_session * session, enum token svc, char *svcname, 
     }
 
     /* Allocate space for in + out args */
-    out_args = mempool_malloc(session->pool, sizeof(char *) * (data->in_cnt + RB_count(tree_m_av)));
+    out_args = mempool_malloc(session->pool, sizeof(char *) * (data->in_cnt + RB_count(tree_m_av) + RB_count(tree_a_av)));
 
     outp = out_args;
 
@@ -500,6 +482,22 @@ static void authorize_svc(tac_session * session, enum token svc, char *svcname, 
 	added++, *outp++ = RB_payload(r, char *), out_cnt++;
     }
 
+    /*
+     * After all AV pairs have been processed, for each unrequested optional
+     * DAEMON AV pair ("add"), if there is no attribute match already in the
+     * output list, add the AV pair (add only one AV pair for each
+     * unrequested optional attribute)
+     */
+
+    for (i = 0; i < out_cnt; i++)
+	RB_search_and_delete(tree_a_av, out_args[i]);
+
+    for (r = RB_first(tree_a_av); r; r = RB_next(r)) {
+	/* Attr is required by daemon but not present. Add it */
+	report(session, LOG_DEBUG, DEBUG_AUTHOR_FLAG, "nas:absent srv:%s -> add %s (l)", RB_payload(r, char *), RB_payload(r, char *));
+	added++, *outp++ = RB_payload(r, char *), out_cnt++;
+    }
+
     if (replaced) {
 	/*
 	 * If we replaced or deleted some pairs we must return the entire
@@ -526,8 +524,10 @@ static void authorize_svc(tac_session * session, enum token svc, char *svcname, 
 
   bye:
     RB_tree_delete(tree_m_a);
+    RB_tree_delete(tree_a_a);
     RB_tree_delete(tree_o_a);
     RB_tree_delete(tree_m_av);
+    RB_tree_delete(tree_a_av);
     RB_tree_delete(tree_o_av);
 }
 
@@ -553,6 +553,11 @@ static void do_author(tac_session * session)
     }
 
     if (!session->user) {
+	if (session->ctx->authz_if_authc && session->authen_method != TAC_PLUS_AUTHEN_METH_TACACSPLUS && session->authen_type == TAC_PLUS_AUTHEN_TYPE_ASCII) {
+	    report(session, LOG_DEBUG, DEBUG_AUTHOR_FLAG, "user '%s' not found but authenticated locally, permitted by default", session->username);
+	    send_author_reply(session, TAC_PLUS_AUTHOR_STATUS_PASS_ADD, NULL, NULL, 0, NULL);
+	    return;
+	}
 	report(session, LOG_DEBUG, DEBUG_AUTHOR_FLAG, "user '%s' not found, denied by default", session->username);
 	send_author_reply(session, TAC_PLUS_AUTHOR_STATUS_FAIL, NULL, NULL, 0, NULL);
 	return;

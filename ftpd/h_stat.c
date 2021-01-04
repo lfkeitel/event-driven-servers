@@ -4,13 +4,13 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: h_stat.c,v 1.12 2015/03/14 06:11:26 marc Exp marc $
+ * $Id: h_stat.c,v 1.13 2020/12/08 18:27:13 marc Exp marc $
  *
  */
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: h_stat.c,v 1.12 2015/03/14 06:11:26 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: h_stat.c,v 1.13 2020/12/08 18:27:13 marc Exp marc $";
 
 static void stat_list_done(struct context *ctx)
 {
@@ -46,7 +46,7 @@ void h_stat(struct context *ctx, char *arg)
 	    if (ctx->ssl_d) {
 		const char *ci = SSL_get_cipher(ctx->ssl_d);
 		int bi = SSL_get_cipher_bits(ctx->ssl_d, NULL);
-		char *ve = SSL_get_cipher_version(ctx->ssl_d);
+		const char *ve = SSL_get_cipher_version(ctx->ssl_d);
 
 		if (ci && bi && ve)
 		    replyf(ctx, MSG_protected_cipher, ci, bi, ve);

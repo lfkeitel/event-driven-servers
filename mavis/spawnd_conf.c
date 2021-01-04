@@ -3,7 +3,7 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: spawnd_conf.c,v 1.60 2019/03/31 09:14:23 marc Exp marc $
+ * $Id: spawnd_conf.c,v 1.61 2020/11/29 08:34:14 marc Exp $
  *
  */
 
@@ -18,7 +18,7 @@
 #include <netdb.h>
 #include "misc/radix.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_conf.c,v 1.60 2019/03/31 09:14:23 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_conf.c,v 1.61 2020/11/29 08:34:14 marc Exp $";
 
 struct acl {
     struct acl *next;
@@ -241,6 +241,7 @@ void spawnd_parse_decls(struct sym *sym)
 	    case_CC_Tokens;
 	case S_closebra:
 	case S_eof:
+	    fflush(stderr);
 	    return;
 	case S_permit:
 	case S_deny:

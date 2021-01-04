@@ -49,7 +49,7 @@
 #include "misc/strops.h"
 #include "mavis/log.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.278 2020/03/05 18:50:22 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: main.c,v 1.280 2020/12/26 15:35:11 marc Exp marc $";
 
 struct config config;		/* configuration data */
 
@@ -436,7 +436,6 @@ static void accept_control_raw(int s, struct scm_data_accept *sd)
 	int priv_lvl, enable_implied[TAC_PLUS_PRIV_LVL_MAX + 1];
 	struct context *ctx = new_context(common_data.io, r);
 	int hc = 1;
-	char *k;
 	tac_session session;
 
 	memset(&session, 0, sizeof(tac_session));
@@ -448,12 +447,10 @@ static void accept_control_raw(int s, struct scm_data_accept *sd)
 	if (h && h->key)
 	    ctx->key = h->key;
 
-	k = ctx->key ? ctx->key->key : "<NULL>";
-
 	if (*(sd->realm))
-	    report(&session, LOG_DEBUG, DEBUG_PACKET_FLAG, "connection request from %s (realm: %s, key: %s)", f, sd->realm, k);
+	    report(&session, LOG_DEBUG, DEBUG_PACKET_FLAG, "connection request from %s (realm: %s", f, sd->realm);
 	else
-	    report(&session, LOG_DEBUG, DEBUG_PACKET_FLAG, "connection request from %s (key: %s)", f, k);
+	    report(&session, LOG_DEBUG, DEBUG_PACKET_FLAG, "connection request from %s", f);
 
 	ctx->sock = s;
 	common_data.users_cur++;
@@ -495,6 +492,12 @@ static void accept_control_raw(int s, struct scm_data_accept *sd)
 	for (i = arr_max; i > arr_min; i--)
 	    if (arr[i]->lookup_revmap != TRISTATE_DUNNO) {
 		ctx->lookup_revmap = arr[i]->lookup_revmap;
+		break;
+	    }
+
+	for (i = arr_max; i > arr_min; i--)
+	    if (arr[i]->authz_if_authc != TRISTATE_DUNNO) {
+		ctx->authz_if_authc = (arr[i]->authz_if_authc == TRISTATE_YES);
 		break;
 	    }
 

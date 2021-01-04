@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 1999-2016 Marc Huber (Marc.Huber@web.de)
+   Copyright (C) 1999-2020 Marc Huber (Marc.Huber@web.de)
    All rights reserved.
 
    Redistribution and use in source and binary  forms,  with or without
@@ -59,9 +59,11 @@
 /*
  * References: 
  * * DES adaption to OpenSSL:
- *   http://www.axlradius.com/tacacs/docs/TACACSClientGuide/ciscoserverdes.htm
+ *   h**p://www.axlradius.com/tacacs/docs/TACACSClientGuide/ciscoserverdes.htm [GONE]
  * * Microsoft PPP CHAP Extensions
  *   RFC2433
+ * * Microsoft MS-CHAP-V2
+ *   RFC2759
  */
 
 #include "headers.h"
@@ -71,9 +73,10 @@
 
 #if defined(WITH_SSL)
 # include <openssl/des.h>
+# include <openssl/sha.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.383 2020/03/05 18:50:22 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.398 2020/12/15 14:24:38 marc Exp marc $";
 
 struct authen_data {
     u_char *data;
@@ -108,20 +111,22 @@ struct hint_struct hints[hint_max] = {
     {" denied by ACL", "AUTHCFAIL-ACL"},
     {" denied (NAS address not permitted)", "AUTHCFAIL-NAS"},
     {" denied (NAC address not permitted)", "AUTHCFAIL-NAC"},
+    {" denied (invalid challenge length)", "AUTHCFAIL-BAD-CHALLENGE-LENGTH"},
 };
 
 static char *get_hint(tac_session * session, enum hint_enum h)
 {
-    if ((h == hint_default) && session->user_msg) {
-	size_t n = 20 + strlen(session->user_msg);
+    if (session->user_msg) {
+	size_t n = strlen(hints[h].plain) + strlen(session->user_msg) + 20;
 	char *t, *hint;
 	hint = mempool_malloc(session->pool, n);
-	strcpy(hint, " failed (");
+	strcpy(hint, hints[h].plain);
+	strcat(hint, " [");
 	strcat(hint, session->user_msg);
 	if ((t = strchr(hint, '\n')))
-	    strcpy(t, ")");
+	    strcpy(t, "]");
 	else
-	    strcat(hint, ")");
+	    strcat(hint, "]");
 	return hint;
     }
     return hints[h].plain;
@@ -135,7 +140,7 @@ static int user_invalid(tac_user * user, enum hint_enum *hint)
     return res ? TAC_PLUS_AUTHEN_STATUS_FAIL : TAC_PLUS_AUTHEN_STATUS_PASS;
 }
 
-static int compare_pwdat(struct pwdat *a, char *b, enum hint_enum *hint, char **follow)
+static int compare_pwdat(struct pwdat *a, char *b, enum hint_enum *hint, char **follow __attribute__ ((unused)))
 {
     int res = -1;
 
@@ -158,10 +163,12 @@ static int compare_pwdat(struct pwdat *a, char *b, enum hint_enum *hint, char **
     case S_unknown:
 	*hint = hint_nopass;
 	return TAC_PLUS_AUTHEN_STATUS_FAIL;
+#ifdef SUPPORT_FOLLOW
     case S_follow:
 	*follow = a->value;
 	*hint = hint_delegated;
 	return TAC_PLUS_AUTHEN_STATUS_FOLLOW;
+#endif
     default:
 	*hint = hint_bug;
 	return TAC_PLUS_AUTHEN_STATUS_FAIL;
@@ -256,6 +263,8 @@ static void report_auth(tac_session * session, char *what, enum hint_enum hint)
 {
     char *aaarealm = alloca(strlen(session->ctx->aaa_realm->name) + 40);
     char *nacrealm = alloca(strlen(session->ctx->nac_realm->name) + 40);
+    char *hint_augmented;
+
     rb_tree_t *rbt = session->ctx->aaa_realm->access;
 
     if ((session->ctx->aaa_realm == config.top_realm) || !session->username[0])
@@ -274,7 +283,7 @@ static void report_auth(tac_session * session, char *what, enum hint_enum hint)
 	strcat(nacrealm, ")");
     }
 
-    char *hint_augmented = get_hint(session, hint);
+    hint_augmented = get_hint(session, hint);
 
     report(session, LOG_INFO, ~0,
 	   "%s%s%s%s%s%s%s%s%s%s%s",
@@ -298,6 +307,8 @@ static void report_auth(tac_session * session, char *what, enum hint_enum hint)
     log_flush(rbt);
 }
 
+#ifdef WITH_SSL
+# ifdef SUPPORT_ARAP
 static void do_arap(tac_session * session)
 {
     int res = TAC_PLUS_AUTHEN_STATUS_FAIL, data_len = 0;
@@ -315,10 +326,8 @@ static void do_arap(tac_session * session)
 	    hint = hint_no_cleartext;
 	    res = TAC_PLUS_AUTHEN_STATUS_FAIL;
 	} else if (session->authen_data->data_len == 24) {
-#ifdef WITH_SSL
 	    struct DES_ks ks;
 	    char cypher[8];
-#endif
 	    char nas_chal[8], r_resp[8], secret[8];
 	    u_int i;
 	    memcpy(nas_chal, session->authen_data->data, (size_t) 8);
@@ -329,12 +338,10 @@ static void do_arap(tac_session * session)
 	    /* Set the parity bit to zero */
 	    for (i = 0; i < sizeof(secret); i++)
 		secret[i] <<= 1;
-#ifdef WITH_SSL
 	    memset(&ks, 0, sizeof(ks));
 	    DES_set_key((DES_cblock *) secret, &ks);
 	    DES_ecb_encrypt((DES_cblock *) nas_chal, (DES_cblock *) cypher, &ks, DES_ENCRYPT);
 	    memcpy(nas_chal, cypher, sizeof(nas_chal));
-#endif
 	    /* Compare the remote's response value with the just
 	     * calculated value. If they are equal, it's a pass,
 	     * otherwise it's a failure
@@ -357,13 +364,11 @@ static void do_arap(tac_session * session)
 		res = cfg_get_access_acl(session, &hint);
 
 	    if (res == TAC_PLUS_AUTHEN_STATUS_PASS) {
-#ifdef WITH_SSL
 		/* Calculate the response to the remote's challenge */
 		memset(&ks, 0, sizeof(ks));
 		DES_set_key((DES_cblock *) secret, &ks);
 		DES_ecb_encrypt((DES_cblock *) r_chal, (DES_cblock *) cypher, &ks, DES_ENCRYPT);
 		memcpy(r_chal, cypher, sizeof(r_chal));
-#endif
 		data_len = 8;
 		data = r_chal;
 	    }
@@ -374,6 +379,8 @@ static void do_arap(tac_session * session)
 
     send_authen_reply(session, res, NULL, 0, data, data_len, 0);
 }
+# endif
+#endif
 
 static void do_chap(tac_session * session)
 {
@@ -422,6 +429,7 @@ static void do_chap(tac_session * session)
     send_authen_reply(session, res, NULL, 0, NULL, 0, 0);
 }
 
+#ifdef SUPPORT_SENDAUTH
 static void do_chap_out(tac_session * session)
 {
     int res = TAC_PLUS_AUTHEN_STATUS_FAIL, data_len = 0;
@@ -462,6 +470,7 @@ static void do_chap_out(tac_session * session)
 
     send_authen_reply(session, res, NULL, 0, data, data_len, 0);
 }
+#endif
 
 static char *subst_magic(tac_session * session, char *format, ...)
 {
@@ -1028,9 +1037,11 @@ static void do_ascii_login(tac_session * session)
     report_auth(session, "shell login", hint);
 
     switch (res) {
+#ifdef SUPPORT_FOLLOW
     case TAC_PLUS_AUTHEN_STATUS_FOLLOW:
 	send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_FOLLOW, NULL, 0, (u_char *) follow, 0, 0);
 	return;
+#endif
     case TAC_PLUS_AUTHEN_STATUS_ERROR:
 	send_authen_error(session, "Authentication backend failure.");
 	return;
@@ -1136,9 +1147,9 @@ static void do_enable_getuser(tac_session * session)
     }
 }
 
+#ifdef WITH_SSL
 static void mschap_desencrypt(u_char * clear, u_char * str __attribute__ ((unused)), u_char * cypher)
 {
-#ifdef WITH_SSL
     unsigned char key[8];
     struct DES_ks ks;
 
@@ -1155,16 +1166,13 @@ static void mschap_desencrypt(u_char * clear, u_char * str __attribute__ ((unuse
     key[5] = ((str[4] & 0x1f) << 3) | ((str[5] & 0xc0) >> 5);
     key[6] = ((str[5] & 0x3f) << 2) | ((str[6] & 0x80) >> 6);
     key[7] = ((str[6] & 0x7f) << 1);
-#endif
 
     /* copy clear to cypher, cause our des encrypts in place */
     memcpy(cypher, clear, (size_t) 8);
 
-#ifdef WITH_SSL
     memset(&ks, 0, sizeof(ks));
     DES_set_key((DES_cblock *) key, &ks);
     DES_ecb_encrypt((DES_cblock *) clear, (DES_cblock *) cypher, &ks, DES_ENCRYPT);
-#endif				/* WITH_SSL */
 }
 
 static void mschap_deshash(u_char * clear, u_char * cypher)
@@ -1244,7 +1252,7 @@ static void do_mschap(tac_session * session)
 
 	if (session->passwdp->passwd[PW_MSCHAP]->type != S_clear)
 	    hint = hint_no_cleartext;
-	else if (session->authen_data->data_len - 1 - MSCHAP_DIGEST_LEN > 0) {
+	else if (session->authen_data->data_len == 1 /* PPP id */  + 8 /* challenge length */  + MSCHAP_DIGEST_LEN) {
 	    u_char response[24];
 	    u_char *chal = session->authen_data->data + 1;
 	    u_char *resp = session->authen_data->data + session->authen_data->data_len - MSCHAP_DIGEST_LEN;
@@ -1266,7 +1274,8 @@ static void do_mschap(tac_session * session)
 		res = cfg_get_access_nas(session, &hint);
 	    if (res == TAC_PLUS_AUTHEN_STATUS_PASS)
 		res = cfg_get_access_acl(session, &hint);
-	}
+	} else
+	    hint = hint_invalid_challenge_length;
     }
 
     report_auth(session, "mschap login", hint);
@@ -1274,6 +1283,76 @@ static void do_mschap(tac_session * session)
     send_authen_reply(session, res, NULL, 0, NULL, 0, 0);
 }
 
+// The MSCHAPv2 support code is completely untested as of 2020-12-12 ...
+
+static void mschapv2_chalhash(u_char * peerChal, u_char * authChal, char *user, u_char * chal)
+{
+    u_char md[SHA_DIGEST_LENGTH];
+    SHA_CTX c;
+    SHA1_Init(&c);
+    SHA1_Update(&c, peerChal, 16);
+    SHA1_Update(&c, authChal, 16);
+    SHA1_Update(&c, user, strlen(user));
+    SHA1_Final(md, &c);
+    memcpy(chal, md, 8);
+}
+
+static void mschapv2_ntresp(u_char * achal, u_char * pchal, char *user, char *pass, u_char * resp)
+{
+    u_char challenge[8];
+    u_char hash[16];
+    mschapv2_chalhash(pchal, achal, user, challenge);
+    mschap_nthash(pass, hash);
+    mschap_chalresp(challenge, hash, resp);
+}
+
+static void do_mschapv2(tac_session * session)
+{
+    int res = TAC_PLUS_AUTHEN_STATUS_FAIL;
+    enum hint_enum hint = hint_default;
+
+    lookup_and_set_user(session);
+    if (query_mavis_info(session, do_mschapv2, PW_MSCHAP))
+	return;
+
+    if (session->user) {
+	set_taglist(session);
+
+	if (session->passwdp->passwd[PW_MSCHAP]->type != S_clear)
+	    hint = hint_no_cleartext;
+	else if (session->authen_data->data_len == 1 /* PPP id */  + 16 /* challenge length */  + MSCHAP_DIGEST_LEN) {
+	    u_char *chal = session->authen_data->data + 1;
+	    u_char *resp = session->authen_data->data + session->authen_data->data_len - MSCHAP_DIGEST_LEN;
+	    session->authen_data->data = NULL;
+	    u_char reserved = 0;
+	    u_char *r;
+	    for (r = resp + 16; r < resp + 24; r++)
+		reserved |= *r;
+	    if (!r && !resp[48] /* reserved, must be zero */ ) {
+		u_char response[24];
+
+		mschapv2_ntresp(chal, resp, session->user->name, session->passwdp->passwd[PW_MSCHAP]->value, response);
+		if (!memcmp(response, resp + 24, 24))
+		    res = TAC_PLUS_AUTHEN_STATUS_PASS;
+	    }
+
+	    if (res == TAC_PLUS_AUTHEN_STATUS_PASS)
+		res = user_invalid(session->user, &hint);
+	    if (res == TAC_PLUS_AUTHEN_STATUS_PASS)
+		res = cfg_get_access_nas(session, &hint);
+	    if (res == TAC_PLUS_AUTHEN_STATUS_PASS)
+		res = cfg_get_access_acl(session, &hint);
+	} else
+	    hint = hint_invalid_challenge_length;
+    }
+
+    report_auth(session, "mschapv2 login", hint);
+
+    send_authen_reply(session, res, NULL, 0, NULL, 0, 0);
+}
+#endif
+
+#ifdef SUPPORT_SENDAUTH
 static void do_mschap_out(tac_session * session)
 {
     int res = TAC_PLUS_AUTHEN_STATUS_FAIL, data_len = 0;
@@ -1311,6 +1390,7 @@ static void do_mschap_out(tac_session * session)
 
     send_authen_reply(session, res, NULL, 0, data, data_len, 0);
 }
+#endif
 
 static void do_login(tac_session * session)
 {
@@ -1386,6 +1466,7 @@ static void do_pap(tac_session * session)
     send_authen_reply(session, res, resp, 0, NULL, 0, 0);
 }
 
+#ifdef SUPPORT_SENDAUTH
 static void do_pap_out(tac_session * session)
 {
     int res = TAC_PLUS_AUTHEN_STATUS_FAIL;
@@ -1414,6 +1495,7 @@ static void do_pap_out(tac_session * session)
 
     send_authen_reply(session, res, NULL, 0, data, 0, 0);
 }
+#endif
 
 #ifdef WITH_LWRES
 static void free_reverse(void *payload, void *data __attribute__ ((unused)))
@@ -1547,19 +1629,6 @@ void get_revmap_nas(struct context *ctx)
     }
 }
 
-int authen_pak_looks_bogus(tac_pak_hdr * hdr)
-{
-    struct authen_start *start = tac_payload(hdr, struct authen_start *);
-    struct authen_cont *cont = tac_payload(hdr, struct authen_cont *);
-    int datalength = ntohl(hdr->datalength);
-
-    if ((hdr->seq_no == 1 && (datalength != TAC_AUTHEN_START_FIXED_FIELDS_SIZE + start->user_len + start->port_len + start->rem_addr_len + start->data_len))
-	|| (hdr->seq_no > 2 && datalength != TAC_AUTHEN_CONT_FIXED_FIELDS_SIZE + ntohs(cont->user_msg_len) + ntohs(cont->user_data_len))) {
-	return -1;
-    }
-    return 0;
-}
-
 void resume_session(tac_session * session, int cur __attribute__ ((unused)))
 {
     void (*resumefn) (tac_session *) = session->resumefn;
@@ -1595,6 +1664,8 @@ void authen(tac_session * session, tac_pak_hdr * hdr)
 	    default:
 		switch (start->type) {
 		case TAC_PLUS_AUTHEN_TYPE_ASCII:
+		    if (session->bug_compatibility & CLIENT_BUG_INVALID_START_DATA)
+			start->data_len = 0;
 		    if (start->user_len && start->data_len) {
 			/* PAP-like inbound login. Not in the drafts, but used by IOS-XR. */
 			session->authen_data->authfn = do_login;
@@ -1611,14 +1682,22 @@ void authen(tac_session * session, tac_pak_hdr * hdr)
 		    if (hdr->version == TAC_PLUS_VER_ONE)
 			session->authen_data->authfn = do_chap;
 		    break;
+#ifdef WITH_SSL
 		case TAC_PLUS_AUTHEN_TYPE_MSCHAP:
 		    if (hdr->version == TAC_PLUS_VER_ONE)
 			session->authen_data->authfn = do_mschap;
 		    break;
+		case TAC_PLUS_AUTHEN_TYPE_MSCHAPV2:
+		    if (hdr->version == TAC_PLUS_VER_ONE)
+			session->authen_data->authfn = do_mschapv2;
+		    break;
+# ifdef SUPPORT_ARAP
 		case TAC_PLUS_AUTHEN_TYPE_ARAP:
 		    if (hdr->version == TAC_PLUS_VER_ONE)
 			session->authen_data->authfn = do_arap;
 		    break;
+# endif
+#endif
 		}
 	    }
 	    break;
@@ -1631,6 +1710,7 @@ void authen(tac_session * session, tac_pak_hdr * hdr)
 		    break;
 		}
 	    break;
+#ifdef SUPPORT_SENDAUTH
 	case TAC_PLUS_AUTHEN_SENDAUTH:
 	    switch (start->type) {
 	    case TAC_PLUS_AUTHEN_TYPE_PAP:
@@ -1647,6 +1727,7 @@ void authen(tac_session * session, tac_pak_hdr * hdr)
 		break;
 	    }
 	    break;
+#endif
 	}
 
 	if (session->authen_data->authfn) {
@@ -1703,11 +1784,13 @@ void authen(tac_session * session, tac_pak_hdr * hdr)
 			    session->groupname_default = arr[i]->groupname;
 			    break;
 			}
+#ifdef SUPPORT_FOLLOW
 		    for (i = arr_max; i > arr_min; i--)
 			if (arr[i]->follow) {
 			    send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_FOLLOW, NULL, 0, (u_char *) arr[i]->follow, 0, 0);
 			    return;
 			}
+#endif
 		    get_revmap_nac(session, arr, arr_min, arr_max);
 		}
 	    }

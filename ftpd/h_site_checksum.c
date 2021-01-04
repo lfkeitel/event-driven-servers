@@ -3,7 +3,7 @@
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: h_site_checksum.c,v 1.28 2020/06/02 17:31:27 marc Exp marc $
+ * $Id: h_site_checksum.c,v 1.30 2020/12/08 18:21:43 marc Exp $
  *
  */
 
@@ -13,7 +13,7 @@
 #  include <openssl/evp.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: h_site_checksum.c,v 1.28 2020/06/02 17:31:27 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: h_site_checksum.c,v 1.30 2020/12/08 18:21:43 marc Exp $";
 
 static void md_crc32_update(struct context *ctx, u_char * s, size_t len)
 {
@@ -79,8 +79,8 @@ static void md_evp_init(struct context *ctx)
 # else
     ctx->checksum.mdctx = EVP_MD_CTX_new();
 # endif
-    EVP_MD_CTX_init(&ctx->checksum.mdctx);
-    EVP_DigestInit_ex(&ctx->checksum.mdctx, m->md, NULL);
+    EVP_MD_CTX_init(ctx->checksum.mdctx);
+    EVP_DigestInit_ex(ctx->checksum.mdctx, m->md, NULL);
 }
 #endif
 

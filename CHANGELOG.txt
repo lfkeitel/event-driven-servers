@@ -40,4 +40,24 @@
 20200602 ftpd/h_site_checksum.c: add untested support for OpenSSL >= 1.1.0
 20200606 ftpd: more changes to support OpenSSL >= 1.1.0
 20200620 tac_plus: Always use TAC_PLUS_AUTHEN_STATUS_GETDATA in password change dialog when asking for old password. Merely cosmetic, no functional change.
+20201106 mavis_tacplus_ldap.pl, mavis_ldap_authonly.pl: handle LDAP_CONSTRAINT_VIOLATION
+20201108 Makefile.inc: Add C dependency on token.h
+20201108 tac_plus: Introduce "add" keyword for sending unrequested optional AV pairs to the NAS (thanks to Dmitriy Ivanisko <ivanisko.dmitriy@gmail.com>)
+20201108 ftpd/h_site_checksum.c: Fix compile error
+20201111 tac_plus: add client bug directive (yet undocumented)
+20201118 tac_plus/mavis.c: handle pap>login>mavis password redirection correctly
+20201120 tac_plus/packet.c: Fix authorization bug (probably introduced at 20201111)
+20201122 tac_plus/config.c: Fix client realm parsing bug (probably introduced at 20201111, too)
+20201129 tac_plus: fflush debug output
+20201129 mavis_tacplus_ldap.pl: Add LDAP_CONNECT_TIMEOUT environment variable
+20201205 tac_plus debugging: User input will now only show up in debug output if the USERINPUT flag is set. That one needs to be set explicitly, ALL will not work.
+20201206 tac_plus/packet.c: Simplify code.
+20201206 tac_plus: Disable SENDAUTH support. Disable FOLLOW support. Disable ARAP and OPAP password support. Adjust documentation accordingly. The actual code is currently just #ifdef'ed out but will be removed in future iterations.
+20201208: ftpd/h_site_checksum: compile fix for OpenSSL >= 1.1.0
+20201208: Makefile: Use pkg-config when available
+20201212: tac_plus/authen.c: Implement MSCHAPv2 support, adjust MSCHAPv1 support. Compiles for me, but may or may not work, I've no way to test this code due to lack of a suitable client.
+20201215: tac_plus/authen.c: Log mavis user message value to access log.
+20201220: tac_plus/acct.c: Fix username rewriting
+20201226: tac_plus/author.c: Implement "permit if-authenticated"
+20201229: tac_plus: add documentation for "client bug" directive
 

@@ -196,6 +196,15 @@ INC			+= -I$(BASE)
 
 # Check for lwres library:
 
+# Try pkg-config first:
+ifeq ($(WITH_LWRES),)
+	ifeq ($(shell pkg-config --exists liblwres 2>/dev/null ; echo $?),0)
+		WITH_LWRES=1
+		LIBDIR_LWRES=$(shell pkg-config --libs-only-L liblwres | cut -c3-)
+		INCDIR_LWRES=$(shell pkg-config --cflags-only-I liblwres | cut -c3-)
+	endif
+endif
+
 ifeq ($(WITH_LWRES),)
 	ifneq ($(wildcard /lib$(LIBARCH)/liblwres$(SHLIB_EXT)* /usr/lib$(LIBARCH)/liblwres$(SHLIB_EXT)*),)
 		ifneq ($(wildcard /usr/include/lwres),)
@@ -236,6 +245,15 @@ ifeq ($(WITH_LWRES),1)
 endif
 
 # Check for OpenSSL library:
+
+# Try pkg-config first:
+ifeq ($(WITH_SSL),)
+	ifeq ($(shell pkg-config --exists openssl 2>/dev/null ; echo $$?),0)
+		WITH_SSL=1
+		LIBDIR_SSL=$(shell pkg-config --libs-only-L openssl | cut -c3-)
+		INCDIR_SSL=$(shell pkg-config --cflags-only-I openssl | cut -c3-)
+	endif
+endif
 
 ifeq ($(WITH_SSL),)
 	ifneq ($(wildcard /lib$(LIBARCH)/libcrypto$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libcrypto$(SHLIB_EXT)*),)
@@ -292,6 +310,16 @@ endif
 
 ifneq ($(WITH_PCRE2),1)
 	# Try to auto-detect PCRE unless configure told us to use v2
+
+	# Try pkg-config first:
+	ifeq ($(WITH_PCRE),)
+		ifeq ($(shell pkg-config --exists libpcre 2>/dev/null ; echo $?),0)
+			WITH_PCRE=1
+			LIBDIR_PCRE=$(shell pkg-config --libs-only-L libpcre | cut -c3-)
+			INCDIR_PCRE=$(shell pkg-config --cflags-only-I libpcre | cut -c3-)
+		endif
+	endif
+
 	ifeq ($(WITH_PCRE),)
 		ifneq ($(wildcard /lib$(LIBARCH)/libpcre$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libpcre$(SHLIB_EXT)*),)
 			ifneq ($(wildcard /usr/include/pcre.h),)
@@ -344,6 +372,16 @@ endif
 
 ifneq ($(WITH_PCRE),1)
 	# Try to auto-detect PCRE v2 unless v1 was found
+
+	# Try pkg-config first:
+	ifeq ($(WITH_PCRE2),)
+		ifeq ($(shell pkg-config --exists libpcre2-8 2>/dev/null ; echo $?),0)
+			WITH_PCRE2=1
+			LIBDIR_PCRE2=$(shell pkg-config --libs-only-L libpcre2-8 | cut -c3-)
+			INCDIR_PCRE2=$(shell pkg-config --cflags-only-I libpcre2-8 | cut -c3-)
+		endif
+	endif
+
 	ifeq ($(WITH_PCRE2),)
 		ifneq ($(wildcard /lib$(LIBARCH)/libpcre2-8$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libpcre2-8$(SHLIB_EXT)*),)
 			ifneq ($(wildcard /usr/include/pcre2.h),)
@@ -396,6 +434,15 @@ endif
 
 # Check for FreeRADIUS client library:
 
+# Try pkg-config first:
+ifeq ($(WITH_FREERADIUS),)
+	ifeq ($(shell pkg-config --exists libfreeradius-client 2>/dev/null ; echo $?),0)
+		WITH_FREERADIUS=1
+		LIBDIR_FREERADIUS=$(shell pkg-config --libs-only-L libfreeradius-client | cut -c3-)
+		INCDIR_FREERADIUS=$(shell pkg-config --cflags-only-I libfreeradius-client | cut -c3-)
+	endif
+endif
+
 ifeq ($(WITH_FREERADIUS),)
 	ifneq ($(wildcard /lib$(LIBARCH)/libfreeradius-client$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libfreeradius-client$(SHLIB_EXT)*),)
 		ifneq ($(wildcard /usr/include/freeradius-client.h),)
@@ -436,6 +483,15 @@ endif
 
 # Check for ZLIB library:
 
+# Try pkg-config first:
+ifeq ($(WITH_ZLIB),)
+	ifeq ($(shell pkg-config --exists libz 2>/dev/null ; echo $?),0)
+		WITH_ZLIB=1
+		LIBDIR_ZLIB=$(shell pkg-config --libs-only-L libz | cut -c3-)
+		INCDIR_ZLIB=$(shell pkg-config --cflags-only-I libz | cut -c3-)
+	endif
+endif
+
 ifeq ($(WITH_ZLIB),)
 	ifneq ($(wildcard /lib$(LIBARCH)/libz$(SHLIB_EXT)* /usr/lib$(LIBARCH)/libz$(SHLIB_EXT)*),)
 		ifneq ($(wildcard /usr/include/zlib.h),)
@@ -466,6 +522,16 @@ ifeq ($(WITH_ZLIB),1)
 endif
 
 # Check for execinfo:
+
+# Try pkg-config first:
+ifeq ($(WITH_EXECINFO),)
+	ifeq ($(shell pkg-config --exists libexecinfo 2>/dev/null ; echo $?),0)
+		WITH_EXECINFO=$(
+		LIB_EXECINFO += $(shell pkg-config --libs-only-l libexecinfo)
+		LIBDIR_EXECINFO=$(shell pkg-config --libs-only-L libexecinfo | cut -c3-)
+		INCDIR_EXECINFO=$(shell pkg-config --cflags-only-I libexecinfo | cut -c3-)
+	endif
+endif
 
 ifeq ($(WITH_EXECINFO),)
 	ifneq ($(wildcard /usr/include/execinfo.h),)
@@ -528,6 +594,16 @@ ifeq ($(WITH_IPC),)
 endif
 
 # Check for CURL:
+
+# Try pkg-config first:
+ifeq ($(WITH_CURL),)
+	ifeq ($(shell pkg-config --exists libcurl 2>/dev/null ; echo $?),0)
+		WITH_CURL=1
+		LIB_CURL += $(shell pkg-config --libs-only-l libcurl)
+		LIBDIR_CURL=$(shell pkg-config --libs-only-L libcurl | cut -c3-)
+		INCDIR_CURL=$(shell pkg-config --cflags-only-I libcurl | cut -c3-)
+	endif
+endif
 
 ifeq ($(WITH_CURL),)
 	ifneq ($(wildcard /usr/lib$(LIBARCH)/libcurl$(SHLIB_EXT)*),)
@@ -722,7 +798,7 @@ endif
 
 %:: %.pl
 
-%.o: %.c
+%.o: %.c $(DIR_MAVIS)/token.h
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -o $@ $<
 
 %:: %.h

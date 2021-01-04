@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# $Id: token.pl,v 1.88 2016/06/07 12:45:20 marc Exp marc $
+# $Id: token.pl,v 1.92 2020/12/26 15:04:02 marc Exp $
 
 use strict;
 
@@ -60,6 +60,7 @@ PATH		S_PATH
 PROC		S_PROC
 REGEX		S_REGEX
 LWRES		S_LWRES
+USERINPUT	S_USERINPUT
 accept		S_accept
 reject		S_reject
 access		S_access
@@ -372,4 +373,7 @@ RFC3164		S_RFC3164
 RFC5424		S_RFC5424
 group-membership	S_groupmembership
 bufsize		S_bufsize
+add		S_add
+bug		S_bug
+if-authenticated	S_ifauthenticated
 

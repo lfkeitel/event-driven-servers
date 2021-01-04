@@ -39,7 +39,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis.c,v 1.134 2017/08/02 17:11:12 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis.c,v 1.135 2020/11/18 19:12:40 marc Exp marc $";
 
 struct mavis_data {
     char *mavistype;
@@ -262,6 +262,8 @@ static void mavis_lookup_final(tac_session * session, av_ctx * avc)
 		if (strcmp(session->mavis_data->mavistype, AV_V_TACTYPE_INFO) && pp[session->mavis_data->pw_ix])
 		    switch (session->mavis_data->pw_ix) {
 		    case PW_PAP:
+			if (pp[session->mavis_data->pw_ix]->type == S_login)
+			    pp[session->mavis_data->pw_ix]->type = pp[PW_LOGIN]->type;
 		    case PW_LOGIN:
 			if (pp[session->mavis_data->pw_ix]->type != S_mavis) {
 			    /* Authenticated via backend, but the profile tells otherwise */

@@ -99,7 +99,7 @@
 #include "spawnd_headers.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.176 2020/03/11 13:00:09 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.179 2020/12/05 14:43:49 marc Exp marc $";
 
 struct common_data common_data;
 
@@ -1069,6 +1069,7 @@ void cfg_read_config(char *url, void (*parsefunction) (struct sym *), char *id)
     }
 
     cfg_close(url, buf, buflen);
+    fflush(stderr);
 
     if (!found) {
 	report_cfg_error(LOG_ERR, ~0, "%s:%u: FATAL: No configuration for id '%s' found.", sym.filename, sym.line, id);
@@ -1284,12 +1285,23 @@ void parse_debug(struct sym *sym, u_int * d)
 	case S_LWRES:
 	    bit = DEBUG_LWRES_FLAG;
 	    break;
+	case S_USERINPUT:
+	    bit = DEBUG_USERINPUT_FLAG;
+	    break;
 	case S_NONE:
-	    add = ~add;
+	    if (add) {
+	    	bit = DEBUG_NONE_FLAG;
+		*d = 0;
+		break;
+	    } else
+		add = 1;
+		// fallthrough
 	case S_ALL:
-	    bit = ~0;
+	    bit = DEBUG_ALL_FLAG;
 	    break;
 	default:
+	    if ((*d & DEBUG_NONE_FLAG) != *d)
+		*d &= ~DEBUG_NONE_FLAG;
 	    return;
 	}
 	if (add)

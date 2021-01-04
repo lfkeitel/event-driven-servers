@@ -1,5 +1,5 @@
 /*
-   Copyright (C) 1999-2016 Marc Huber (Marc.Huber@web.de)
+   Copyright (C) 1999-2020 Marc Huber (Marc.Huber@web.de)
    All rights reserved.
 
    Redistribution and use in source and binary  forms,  with or without
@@ -60,24 +60,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: acct.c,v 1.95 2020/03/05 18:50:22 marc Exp $";
-
-int accounting_pak_looks_bogus(tac_pak_hdr * hdr)
-{
-    struct acct *acct = tac_payload(hdr, struct acct *);
-    u_char *p = (u_char *) acct + TAC_ACCT_REQ_FIXED_FIELDS_SIZE;
-    int i;
-    u_int len;
-    u_int datalength = ntohl(hdr->datalength);
-
-    /* Do some sanity checking on the packet */
-    len = TAC_ACCT_REQ_FIXED_FIELDS_SIZE + acct->user_len + acct->port_len + acct->rem_addr_len + acct->arg_cnt;
-
-    for (i = 0; i < (int) acct->arg_cnt; i++)
-	len += p[i];
-
-    return (i != (int) acct->arg_cnt || len != datalength);
-}
+static const char rcsid[] __attribute__ ((used)) = "$Id: acct.c,v 1.98 2020/12/20 15:28:17 marc Exp marc $";
 
 void accounting(tac_session * session, tac_pak_hdr * hdr)
 {
@@ -87,6 +70,7 @@ void accounting(tac_session * session, tac_pak_hdr * hdr)
     if (rbt) {
 	struct acct *acct = tac_payload(hdr, struct acct *);
 	int i;
+	size_t user_len;
 	char *acct_type, *portname, *argstart, *msgid;
 	u_char *argsizep;
 	u_char *p = (u_char *) acct + TAC_ACCT_REQ_FIXED_FIELDS_SIZE + acct->arg_cnt;
@@ -102,10 +86,15 @@ void accounting(tac_session * session, tac_pak_hdr * hdr)
 
 	log_start(rbt, session->ctx->nas_address_ascii, msgid);
 
-	log_write(rbt, (char *) p, acct->user_len);
-	session->username = (char *) p;
+	session->username = mempool_strndup(session->pool, p, acct->user_len);
+	session->tag = strchr(session->username, session->ctx->aaa_realm->separator);
+	if (session->tag)
+	    *session->tag++ = 0;
 	tac_rewrite_user(session);
-// FIXME??? This ignores possible tagging (but nobody seems to use that anyway ...
+
+	user_len = strlen(session->username);
+	log_write(rbt, session->username, user_len);
+
 	p += acct->user_len;
 
 	log_write_separator(rbt);
@@ -136,13 +125,10 @@ void accounting(tac_session * session, tac_pak_hdr * hdr)
 	    argsizep = (u_char *) acct + TAC_ACCT_REQ_FIXED_FIELDS_SIZE;
 	    for (i = 0; i < (int) acct->arg_cnt; i++) {
 		if (!strcmp((char *) p, "service=exec")) {
-		    char *mu = alloca(acct->user_len + 1);
 		    char *mp = alloca(acct->port_len + 1);
-		    strncpy(mu, session->username, strlen(session->username));
-		    mu[acct->user_len] = 0;
 		    strncpy(mp, portname, acct->port_len);
 		    mp[acct->port_len] = 0;
-		    tac_script_set_exec_context(session, mu, mp, NULL);
+		    tac_script_set_exec_context(session, session->username, mp, NULL);
 		    break;
 		}
 		p += *argsizep++;

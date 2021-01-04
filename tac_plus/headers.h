@@ -56,7 +56,7 @@
    FITNESS FOR A PARTICULAR PURPOSE.
 */
 
-/* $Id: headers.h,v 1.416 2020/03/05 18:50:22 marc Exp $ */
+/* $Id: headers.h,v 1.424 2020/12/26 15:35:11 marc Exp marc $ */
 
 #ifndef __HEADERS_H_
 #define __HEADERS_H_
@@ -154,7 +154,9 @@ typedef struct {
      TRISTATE(single_connection);	/* single-connection permitted? */
      TRISTATE(augmented_enable);	/* one-step enable for $enab.* user */
      TRISTATE(map_pap_to_login);
+     TRISTATE(authz_if_authc);
      BISTATE(orphan);		/* don't inherit stuff */
+    u_int bug_compatibility;
     char *name;			/* host name */
     struct tac_key *key;
     char *motd;
@@ -164,7 +166,9 @@ typedef struct {
     char *authfail_banner;
     char *username;		/* default user name */
     char *groupname;		/* default group for users not in any group */
+#ifdef SUPPORT_FOLLOW
     char *follow;		/* alternate daemon */
+#endif
     struct pwdat *enable[TAC_PLUS_PRIV_LVL_MAX + 1];	/* enable passwords */
     char enable_implied[TAC_PLUS_PRIV_LVL_MAX + 1];
     radixtree_t *addrtree;
@@ -177,16 +181,25 @@ typedef struct {
     tac_realm *nac_realm;
     tac_realm *aaa_realm;
     tac_rewrite *rewrite_user;
+    u_int client_bug;
     u_int debug;
 } tac_host;
 
-enum pw_ix { PW_LOGIN = 0, PW_PAP, PW_ARAP, PW_OPAP, PW_CHAP, PW_MSCHAP, PW_MAVIS
+enum pw_ix { PW_LOGIN = 0, PW_PAP,
+#ifdef SUPPORT_ARAP
+    PW_ARAP,
+#endif
+#ifdef SUPPORT_OPAP
+    PW_OPAP,
+#endif
+    PW_CHAP, PW_MSCHAP, PW_MAVIS
 };
 
 
 enum hint_enum { hint_failed =
 	0, hint_denied, hint_nopass, hint_expired, hint_default, hint_rejected, hint_delegated, hint_succeeded, hint_permitted, hint_no_cleartext,
-    hint_backend_error, hint_denied_profile, hint_failed_password_retry, hint_bug, hint_abort, hint_denied_by_acl, hint_bad_nas, hint_bad_nac, hint_max
+    hint_backend_error, hint_denied_profile, hint_failed_password_retry, hint_bug, hint_abort, hint_denied_by_acl, hint_bad_nas, hint_bad_nac,
+    hint_invalid_challenge_length, hint_max
 };
 
 struct stringlist;
@@ -578,10 +591,14 @@ struct tac_session {
      BISTATE(passwd_mustchange);
      BISTATE(mavisauth_res_valid);
      BISTATE(user_is_session_specific);
+    u_int bug_compatibility;
     u_int mavisauth_res;
+    u_int client_bug;
     u_int debug;
     u_char seq_no;		/* seq. no. of last packet exchanged */
     u_char version;
+    u_char authen_type;
+    u_char authen_method;
     void (*resumefn) (tac_session *);
 };
 
@@ -622,6 +639,7 @@ struct context {
      TRISTATE(cleanup_when_idle);	/* cleanup context when idle */
      TRISTATE(lookup_revmap);	/* lookup reverse mapping in DNS */
      TRISTATE(map_pap_to_login);
+     BISTATE(authz_if_authc);
      BISTATE(single_connection_flag);	/* single-connection enabled? */
      BISTATE(single_connection_test);	/* single-connection capable, but not telling? */
      BISTATE(single_connection_did_warn);
@@ -651,7 +669,6 @@ void cleanup(struct context *, int);
 
 /* acct.c */
 void accounting(tac_session *, tac_pak_hdr *);
-int accounting_pak_looks_bogus(tac_pak_hdr *);
 
 /* report.c */
 void report_string(tac_session *, int, int, char *, char *, int);
@@ -689,16 +706,14 @@ int compare_log(const void *, const void *);
 
 /* dump.c */
 char *summarise_outgoing_packet_type(tac_pak_hdr *);
-void dump_nas_pak(tac_session *);
+void dump_nas_pak(tac_session *, int);
 void dump_tacacs_pak(tac_session *, tac_pak_hdr *);
 
 /* authen.c */
 void authen(tac_session *, tac_pak_hdr *);
-int authen_pak_looks_bogus(tac_pak_hdr *);
 
 /* author.c */
 void author(tac_session *, tac_pak_hdr *);
-int author_pak_looks_bogus(tac_pak_hdr *);
 
 /* config.c */
 int cfg_get_access_acl(tac_session *, enum hint_enum *);
@@ -706,9 +721,11 @@ int cfg_get_enable(tac_session *, struct pwdat **);
 int cfg_get_message(tac_session *, char **);
 int cfg_get_hushlogin(tac_session *);
 enum token cfg_get_cmd_node(tac_session *, char *, char *, char **);
-enum token cfg_get_svc_attrs(tac_session *, enum token, char *, char *, rb_tree_t *, rb_tree_t *, rb_tree_t *, rb_tree_t *, enum token *, enum token *);
+enum token cfg_get_svc_attrs(tac_session *, enum token, char *, char *, rb_tree_t *, rb_tree_t *, rb_tree_t *, rb_tree_t *, rb_tree_t *, rb_tree_t *,
+			     enum token *, enum token *);
 
 int cfg_get_debug(tac_session *, u_int *);
+int cfg_get_client_bug(tac_session *, u_int *);
 int cfg_get_access(tac_session *, enum hint_enum *);
 int cfg_get_access_nas(tac_session *, enum hint_enum *);
 int cfg_get_access_nac(tac_session *, enum hint_enum *);
@@ -733,7 +750,6 @@ void tac_rewrite_user(tac_session *);
 #else
 #define tac_rewrite_user(A) /**/
 #endif
-
 static __inline__ int minimum(int a, int b)
 {
     return (a < b) ? a : b;
@@ -778,6 +794,10 @@ extern struct config config;
 extern int die_when_idle;
 
 #endif				/* __HEADERS_H_ */
+
+#define CLIENT_BUG_INVALID_START_DATA	0x01
+#define CLIENT_BUG_BAD_VERSION			0x02
+
 /*
  * vim:ts=4
  */

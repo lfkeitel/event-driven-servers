@@ -87,7 +87,7 @@
 
 #include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.862 2020/05/02 11:10:20 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.870 2020/12/26 15:35:11 marc Exp marc $";
 
 struct tac_acllist {
     struct tac_acllist *next;
@@ -187,10 +187,12 @@ struct node_cmd {
 struct node_svc {
     enum token type;		/* node type */
     u_int line;			/* line number declared on */
-    char **attrs_m;
-    char **attrs_o;
+    char **attrs_m;		/* mandatory */
+    char **attrs_o;		/* optional (from NAS) */
+    char **attrs_a;		/* add optinal (to NAS) */
     int cnt_m;
     int cnt_o;
+    int cnt_a;
     struct tac_acllist *acllist;
     enum token sub_dflt;	/* default for child nodes */
     enum token attr_dflt;	/* default for attributes */
@@ -543,6 +545,7 @@ void parse_decls_real(struct sym *sym, tac_realm * r)
 	switch (sym->code) {
 	case S_closebra:
 	case S_eof:
+	    fflush(stderr);
 	    return;
 	case S_password:
 	    tac_sym_get(sym);
@@ -1523,20 +1526,32 @@ static void parse_password(struct sym *sym, tac_user * user)
 	    case S_pap:
 		pw_ix = PW_PAP, cry = 1;
 		break;
+#ifdef SUPPORT_ARAP
 	    case S_arap:
 		pw_ix = PW_ARAP;
 		break;
+#endif
 	    case S_chap:
 		pw_ix = PW_CHAP;
 		break;
 	    case S_mschap:
 		pw_ix = PW_MSCHAP;
 		break;
+#ifdef SUPPORT_SENDAUTH
 	    case S_opap:
 		pw_ix = PW_OPAP;
 		break;
+#endif
 	    default:
-		parse_error_expect(sym, S_login, S_pap, S_arap, S_chap, S_mschap, S_opap, S_unknown);
+		parse_error_expect(sym, S_login, S_pap,
+#ifdef SUPPORT_ARAP
+				   S_arap,
+#endif
+				   S_chap, S_mschap,
+#ifdef SUPPORT_SENDAUTH
+				   S_opap,
+#endif
+				   S_unknown);
 	    }
 	    tac_sym_get(sym);
 	    pp[pw_ix] = parse_pw(sym, user->pool, cry);
@@ -1566,7 +1581,11 @@ static void parse_password(struct sym *sym, tac_user * user)
 
     if (pw_ix < PW_MAVIS)
 	for (i = 0; i < PW_MAVIS; i++)
-	    if (i != PW_OPAP && ((pp[i] == passwd_deny_dflt) || (pp[i] == passwd_login_dflt) || (pp[i] == passwd_mavis_dflt)))
+	    if (
+#ifdef SUPPORT_SENDAUTH
+		   i != PW_OPAP &&
+#endif
+		   ((pp[i] == passwd_deny_dflt) || (pp[i] == passwd_login_dflt) || (pp[i] == passwd_mavis_dflt)))
 		pp[i] = pp[pw_ix];
 }
 
@@ -1982,6 +2001,13 @@ static void merge_svcs(tac_user * user, rb_tree_t ** to, rb_tree_t * from)
 	    memcpy(st->attrs_m + i, sf->attrs_m, sf->cnt_m * sizeof(char *));
 	    st->attrs_m[st->cnt_m] = NULL;
 	}
+	if (sf->attrs_a) {
+	    int i = st->cnt_a;
+	    st->cnt_a += sf->cnt_a;
+	    st->attrs_a = realloc(st->attrs_a, sizeof(char *) * (st->cnt_a + 1));
+	    memcpy(st->attrs_a + i, sf->attrs_a, sf->cnt_a * sizeof(char *));
+	    st->attrs_a[st->cnt_a] = NULL;
+	}
 	if (sf->attrs_o) {
 	    int i = st->cnt_o;
 	    st->cnt_o += sf->cnt_o;
@@ -2274,10 +2300,12 @@ static void parse_user_attr(struct sym *sym, tac_user * user, enum token user_or
 	    tac_sym_get(sym);
 	    parse_pw_acl(sym, user, PW_PAP, 1);
 	    continue;
+#ifdef SUPPORT_ARAP
 	case S_arap:
 	    tac_sym_get(sym);
 	    parse_pw_acl(sym, user, PW_ARAP, 0);
 	    continue;
+#endif
 	case S_chap:
 	    tac_sym_get(sym);
 	    parse_pw_acl(sym, user, PW_CHAP, 0);
@@ -2286,10 +2314,12 @@ static void parse_user_attr(struct sym *sym, tac_user * user, enum token user_or
 	    tac_sym_get(sym);
 	    parse_pw_acl(sym, user, PW_MSCHAP, 0);
 	    continue;
+#ifdef SUPPORT_SENDAUTH
 	case S_opap:
 	    tac_sym_get(sym);
 	    parse_pw_acl(sym, user, PW_OPAP, 0);
 	    continue;
+#endif
 	case S_password:
 	    parse_password(sym, user);
 	    continue;
@@ -2525,17 +2555,35 @@ static void parse_host(struct sym *sym, tac_realm * r)
 		parse_error_expect(sym, S_fallback, S_realm, S_unknown);
 	    }
 	    continue;
+	case S_permit:
+	    tac_sym_get(sym);
+	    parse(sym, S_ifauthenticated);
+	    parse(sym, S_equal);
+	    host->authz_if_authc = parse_tristate(sym);
+	    continue;
 	case S_access:
 	    tac_sym_get(sym);
 	    parse_host_acl(sym, &host->access_acl);
 	    continue;
 	case S_client:
 	    tac_sym_get(sym);
-	    parse(sym, S_realm);
-	    parse(sym, S_equal);
-	    host->nac_realm = get_realm(sym->buf);
-	    tac_sym_get(sym);
+	    switch (sym->code) {
+	    case S_realm:
+		tac_sym_get(sym);
+		parse(sym, S_equal);
+		host->nac_realm = get_realm(sym->buf);
+		tac_sym_get(sym);
+		break;
+	    case S_bug:
+		tac_sym_get(sym);
+		parse(sym, S_equal);
+		host->client_bug = parse_int(sym);
+		break;
+	    default:
+		parse_error_expect(sym, S_bug, S_realm, S_unknown);
+	    }
 	    continue;
+#ifdef SUPPORT_FOLLOW
 	case S_follow:
 	    tac_sym_get(sym);
 	    parse(sym, S_equal);
@@ -2545,6 +2593,7 @@ static void parse_host(struct sym *sym, tac_realm * r)
 		host->follow = strdup(sym->buf);
 	    tac_sym_get(sym);
 	    continue;
+#endif
 	case S_user:
 	    tac_sym_get(sym);
 	    switch (sym->code) {
@@ -3867,6 +3916,7 @@ static void parse_attrs(struct sym *sym, tac_user * user, struct node_svc *svc)
 		tac_sym_get(sym);
 		continue;
 	    }
+	case S_add:
 	case S_optional:
 	    sep = "*";
 	case S_set:
@@ -3885,7 +3935,9 @@ static void parse_attrs(struct sym *sym, tac_user * user, struct node_svc *svc)
 
 	    if (sc == S_set)
 		attr_add(user, &svc->attrs_m, &svc->cnt_m, buf);
-	    else
+	    else if (sc == S_add)
+		attr_add(user, &svc->attrs_a, &svc->cnt_a, buf);
+	    else		// S_optional
 		attr_add(user, &svc->attrs_o, &svc->cnt_o, buf);
 	    continue;
 	case S_protocol:
@@ -4282,7 +4334,7 @@ int cfg_get_access_nac(tac_session * session, enum hint_enum *hint)
 
 #define C cfg_get_debug_data
 static struct {
-    int i;
+    u_int i;
 } C;
 
 static int cfg_get_debug_func(tac_user * u)
@@ -4301,6 +4353,34 @@ int cfg_get_debug(tac_session * session, u_int * i)
     C.i = session->debug;
     if (session->user) {
 	res = cfg_get(session, cfg_get_debug_func);
+	*i = C.i;
+    }
+    return res;
+}
+
+#undef C
+
+#define C cfg_get_client_bug_data
+static struct {
+    u_int i;
+} C;
+
+static int cfg_get_client_bug_func(tac_user * u)
+{
+    C.i |= u->debug;
+    if (u->debug & DEBUG_NONE_FLAG) {
+	C.i = 0;
+	return 0;
+    }
+    return -1;
+}
+
+int cfg_get_client_bug(tac_session * session, u_int * i)
+{
+    int res = -1;
+    C.i = session->client_bug;
+    if (session->user) {
+	res = cfg_get(session, cfg_get_client_bug_func);
 	*i = C.i;
     }
     return res;
@@ -4482,6 +4562,8 @@ static struct {
     tac_session *session;
     rb_tree_t *tree_m_a;
     rb_tree_t *tree_m_av;
+    rb_tree_t *tree_a_a;
+    rb_tree_t *tree_a_av;
     rb_tree_t *tree_o_a;
     rb_tree_t *tree_o_av;
     char *svcname;
@@ -4533,6 +4615,10 @@ static int cfg_get_svc_attrs_func(tac_user * u)
 		RB_insert(C.tree_m_a, protonode->attrs_m[i]);
 		RB_insert(C.tree_m_av, protonode->attrs_m[i]);
 	    }
+	    for (i = 0; i < protonode->cnt_a; i++) {
+		RB_insert(C.tree_a_a, protonode->attrs_a[i]);
+		RB_insert(C.tree_a_av, protonode->attrs_a[i]);
+	    }
 	    for (i = 0; i < protonode->cnt_o; i++) {
 		RB_insert(C.tree_o_a, protonode->attrs_o[i]);
 		RB_insert(C.tree_o_av, protonode->attrs_o[i]);
@@ -4541,6 +4627,10 @@ static int cfg_get_svc_attrs_func(tac_user * u)
 	for (i = 0; i < node->cnt_m; i++) {
 	    if (RB_insert(C.tree_m_a, node->attrs_m[i]))
 		RB_insert(C.tree_m_av, node->attrs_m[i]);
+	}
+	for (i = 0; i < node->cnt_a; i++) {
+	    RB_insert(C.tree_a_a, node->attrs_a[i]);
+	    RB_insert(C.tree_a_av, node->attrs_a[i]);
 	}
 	for (i = 0; i < node->cnt_o; i++) {
 	    RB_insert(C.tree_o_a, node->attrs_o[i]);
@@ -4554,8 +4644,8 @@ static int cfg_get_svc_attrs_func(tac_user * u)
 
 enum token cfg_get_svc_attrs(tac_session * session, enum token type,
 			     char *svcname, char *protocol,
-			     rb_tree_t * tree_m_a, rb_tree_t * tree_o_a,
-			     rb_tree_t * tree_m_av, rb_tree_t * tree_o_av, enum token *svc_dflt, enum token *attr_dflt)
+			     rb_tree_t * tree_m_a, rb_tree_t * tree_a_a, rb_tree_t * tree_o_a,
+			     rb_tree_t * tree_m_av, rb_tree_t * tree_a_av, rb_tree_t * tree_o_av, enum token *svc_dflt, enum token *attr_dflt)
 {
     C.result = S_unknown;
     C.session = session;
@@ -4565,8 +4655,10 @@ enum token cfg_get_svc_attrs(tac_session * session, enum token type,
     C.svc_dflt = S_unknown;
     C.attr_dflt = S_unknown;
     C.tree_m_a = tree_m_a;
+    C.tree_a_a = tree_a_a;
     C.tree_o_a = tree_o_a;
     C.tree_m_av = tree_m_av;
+    C.tree_a_av = tree_a_av;
     C.tree_o_av = tree_o_av;
     if (session->user)
 	cfg_get(session, cfg_get_svc_attrs_func);

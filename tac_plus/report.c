@@ -39,7 +39,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: report.c,v 1.72 2016/06/06 17:15:25 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: report.c,v 1.74 2020/11/29 08:27:00 marc Exp marc $";
 
 
 void report(tac_session * session, int priority, int level, char *fmt, ...)
@@ -73,13 +73,14 @@ void report(tac_session * session, int priority, int level, char *fmt, ...)
     }
 
     if ((common_data.debug & level) || (session && (session->debug & level))) {
-	if (common_data.debugtty || common_data.debug_redirected)
+	if (common_data.debugtty || common_data.debug_redirected) {
 	    fprintf(stderr, "%ld: %s.%.3lu %x/%.8x: %s %s\n", (long int) pid,
 		    now, (u_long) io_now.tv_usec / 1000,
 		    (session && session->ctx) ? session->ctx->id : 0,
 		    session ? session->session_id : 0,
 		    (session && session->ctx && session->ctx->nas_address_ascii) ? session->ctx->nas_address_ascii : "-", msg);
-	else if (common_data.syslog_dflt)
+	    fflush(stderr);
+	} else if (common_data.syslog_dflt)
 	    syslog(LOG_DEBUG, "%x/%.8x: %s %s%s",
 		   (session && session->ctx) ? session->ctx->id : 0,
 		   session ? session->session_id : 0,

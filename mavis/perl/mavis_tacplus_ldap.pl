@@ -1,8 +1,8 @@
 #!/usr/bin/env perl
-# $Id: mavis_tacplus_ldap.pl,v 1.57 2020/05/31 11:14:51 marc Exp marc $
+# $Id: mavis_tacplus_ldap.pl,v 1.61 2020/12/28 20:10:20 marc Exp marc $
 #
 # mavis_tacplus_ldap.pl
-# (C)2001-2014 Marc Huber <Marc.Huber@web.de>
+# (C)2001-2020 Marc Huber <Marc.Huber@web.de>
 # All rights reserved.
 #
 # TACACS+ backend for libmavis_external.so
@@ -49,6 +49,9 @@ LDAP_SCOPE
 LDAP_BASE
 	Base DN of your LDAP server
 	Example: "dc=example,dc=com"
+
+LDAP_CONNECT_TIMEOUT
+	Timeout for initital connect to remote LDAP server. Default: 5
 
 LDAP_FILTER
 	LDAP search filter
@@ -205,6 +208,7 @@ my $LDAP_MASTER			= ['ldap01'];
 my $LDAP_HOSTS			= ['ldap03', 'ldap04', 'ldap01', 'ldap02'];
 my @LDAP_BIND			= ();
 my $LDAP_BASE			= 'ou=staff,dc=example,dc=com';
+my $LDAP_CONNECT_TIMEOUT = 5;
 my $LDAP_SCOPE			= 'sub';
 my $LDAP_FILTER			= '(uid=%s)';
 my $LDAP_FILTER_CHPW	= '(uid=%s)';
@@ -229,7 +233,7 @@ $flag_fallthrough		= $ENV{'FLAG_FALLTHROUGH'} if exists $ENV{'FLAG_FALLTHROUGH'}
 $flag_use_memberof		= $ENV{'FLAG_USE_MEMBEROF'} if exists $ENV{'FLAG_USE_MEMBEROF'};
 $flag_authorize_only	= $ENV{'FLAG_AUTHORIZE_ONLY'} if exists $ENV{'FLAG_AUTHORIZE_ONLY'};
 
-print STDERR "Default server type is \'$LDAP_SERVER_TYPE\'. You *may* need to change that to 'generic' or 'microsoft'.\n" unless exists $ENV{'LDAP_SERVER_TYPE'};
+print STDERR "Default server type is \'$LDAP_SERVER_TYPE\'. You probably need to change that to 'generic' or 'microsoft'.\n" unless exists $ENV{'LDAP_SERVER_TYPE'};
 
 if ($LDAP_SERVER_TYPE eq 'tacacs_schema') {
 	$LDAP_FILTER	= '(&(uid=%s)(objectClass=tacacsAccount))';
@@ -255,6 +259,7 @@ $LDAP_SCOPE			= $ENV{'LDAP_SCOPE'} if exists $ENV{'LDAP_SCOPE'};
 $LDAP_BASE			= $ENV{'LDAP_BASE'} if exists $ENV{'LDAP_BASE'};
 $LDAP_FILTER		= $ENV{'LDAP_FILTER'} if exists $ENV{'LDAP_FILTER'};
 $LDAP_FILTER_CHPW	= $ENV{'LDAP_FILTER_CHPW'} if exists $ENV{'LDAP_FILTER_CHPW'};
+$LDAP_CONNECT_TIMEOUT	= $ENV{'LDAP_CONNECT_TIMEOUT'} if exists $ENV{'LDAP_CONNECT_TIMEOUT'};
 @LDAP_BIND			= ($ENV{'LDAP_USER'}, password => $ENV{'LDAP_PASSWD'}) if (exists $ENV{'LDAP_USER'} && exists $ENV{'LDAP_PASSWD'});
 $flag_use_memberof		= $ENV{'USE_MEMBEROF'} if exists $ENV{'USE_MEMBEROF'};
 $use_tls			= $ENV{'USE_TLS'} if exists $ENV{'USE_TLS'};
@@ -277,7 +282,7 @@ unless (defined $flag_use_memberof) {
 
 die "LDAP_HOSTS not defined" unless exists $ENV{'LDAP_HOSTS'};
 
-use Net::LDAP qw(LDAP_INVALID_CREDENTIALS);
+use Net::LDAP qw(LDAP_INVALID_CREDENTIALS LDAP_CONSTRAINT_VIOLATION);
 use Net::LDAP::Constant qw(LDAP_EXTENSION_PASSWORD_MODIFY);
 use Net::LDAP::Extension::SetPassword;
 
@@ -400,7 +405,7 @@ while ($in = <>) {
   retry_once:
 
 	unless ($ldap) {
-		$ldap = Net::LDAP->new($LDAP_HOSTS, timeout=>5);
+		$ldap = Net::LDAP->new($LDAP_HOSTS, timeout=>$LDAP_CONNECT_TIMEOUT);
 		unless ($ldap) {
 			$V[AV_A_USER_RESPONSE] = "No answer from LDAP backend.";
 			goto fatal;
@@ -447,7 +452,7 @@ while ($in = <>) {
 			$mesg =  $ldap->bind($authdn, password => $V[AV_A_PASSWORD]);
 			if ($mesg->code) {
 				$V[AV_A_USER_RESPONSE] = $mesg->error . " (" . __LINE__ . ")";
-				goto fail if $mesg->code == LDAP_INVALID_CREDENTIALS;
+				goto fail if ($mesg->code == LDAP_INVALID_CREDENTIALS || $mesg->code == LDAP_CONSTRAINT_VIOLATION);
 				goto fatal;
 			}
 		} elsif (defined ($flag_chpass) && ($V[AV_A_TACTYPE] eq AV_V_TACTYPE_CHPW)){
@@ -490,7 +495,7 @@ while ($in = <>) {
 
 				if ($mesg->code) {
 					$V[AV_A_USER_RESPONSE] = $mesg->error . " (" . __LINE__ . ")";
-					goto fail if $mesg->code == LDAP_INVALID_CREDENTIALS;
+					goto fail if ($mesg->code == LDAP_INVALID_CREDENTIALS || $mesg->code == LDAP_CONSTRAINT_VIOLATION);
 					goto fatal;
 				}
 
@@ -517,7 +522,7 @@ while ($in = <>) {
 				$mesg =  $ldap->bind($authdn, password => $V[AV_A_PASSWORD]);
 				if ($mesg->code) {
 					$V[AV_A_USER_RESPONSE] = $mesg->error . " (" . __LINE__ . ")";
-					goto fail if $mesg->code == LDAP_INVALID_CREDENTIALS;
+					goto fail if ($mesg->code == LDAP_INVALID_CREDENTIALS || $mesg->code == LDAP_CONSTRAINT_VIOLATION);
 					goto fatal;
 				}
 

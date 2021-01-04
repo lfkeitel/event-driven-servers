@@ -3,7 +3,7 @@
  * (C)1997-2011 Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  * 
- * $Id: readcmd.c,v 1.14 2019/03/30 14:57:51 marc Exp $
+ * $Id: readcmd.c,v 1.15 2020/12/06 19:31:24 marc Exp marc $
  *
  */
 
@@ -16,7 +16,7 @@
 #include "headers.h"
 #include <arpa/telnet.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: readcmd.c,v 1.14 2019/03/30 14:57:51 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: readcmd.c,v 1.15 2020/12/06 19:31:24 marc Exp marc $";
 
 static void parsecmd(struct context *, int);
 
@@ -98,7 +98,7 @@ void readcmd(struct context *ctx, int cur __attribute__ ((unused)))
 	case 2:
 	    ctx->iac[2] = *t;
 	    iac_state = 0;
-	    ctx->cbufo = buffer_write(ctx->cbufo, ctx->iac, 3);
+	    ctx->cbufo = buffer_write(ctx->cbufo, (char *) ctx->iac, 3);
 	    io_set_o(ctx->io, ctx->cfn);
 	}
 
