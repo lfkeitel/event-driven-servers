@@ -56,7 +56,7 @@
    FITNESS FOR A PARTICULAR PURPOSE.
 */
 
-/* $Id: headers.h,v 1.424 2020/12/26 15:35:11 marc Exp marc $ */
+/* $Id: headers.h,v 1.426 2021/01/10 14:02:57 marc Exp marc $ */
 
 #ifndef __HEADERS_H_
 #define __HEADERS_H_
@@ -199,7 +199,7 @@ enum pw_ix { PW_LOGIN = 0, PW_PAP,
 enum hint_enum { hint_failed =
 	0, hint_denied, hint_nopass, hint_expired, hint_default, hint_rejected, hint_delegated, hint_succeeded, hint_permitted, hint_no_cleartext,
     hint_backend_error, hint_denied_profile, hint_failed_password_retry, hint_bug, hint_abort, hint_denied_by_acl, hint_bad_nas, hint_bad_nac,
-    hint_invalid_challenge_length, hint_max
+    hint_invalid_challenge_length, hint_weak_password, hint_max
 };
 
 struct stringlist;
@@ -323,11 +323,16 @@ struct realm {
     struct tac_acl *mavis_user_acl;
     int mavis_user_acl_negate;
     struct tac_acl *enable_user_acl;
+    struct tac_acl *password_acl;
+    int password_acl_negate;
     time_t shellctx_expire;
     time_t last_backend_failure;
     tac_realm *aaa_realm;
     tac_realm *group_realm;
     tac_realm *nac_realm;
+#ifdef WITH_PCRE2
+    pcre2_code *password_minimum_requirement;
+#endif
     u_int debug;
 };
 

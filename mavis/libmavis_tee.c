@@ -3,11 +3,10 @@
  * (C)2002-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  * 
- * $Id: libmavis_tee.c,v 1.17 2017/11/02 20:28:40 marc Exp marc $
+ * $Id: libmavis_tee.c,v 1.18 2021/03/21 08:57:22 marc Exp marc $
  *
  */
 
-#define __MAVIS_external__
 #define MAVIS_name "tee"
 
 #include "misc/sysconf.h"
@@ -27,7 +26,7 @@
 #include "log.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_tee.c,v 1.17 2017/11/02 20:28:40 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_tee.c,v 1.18 2021/03/21 08:57:22 marc Exp marc $";
 
 #define MAVIS_CTX_PRIVATE	\
 		int fd_in;	\

@@ -2,7 +2,7 @@ MAVIS - Modular Attribute-Value Interchange System
 
 Marc Huber
 
-   $Id: manual.xml,v 1.74 2020/04/28 16:50:39 marc Exp marc $
+   $Id: manual.xml,v 1.78 2021/03/20 18:05:48 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -28,10 +28,11 @@ Marc Huber
               5.2.8. The log module
               5.2.9. The PAM module
               5.2.10. The remote module
-              5.2.11. The system module
-              5.2.12. The userdb module
-              5.2.13. The tee module
-              5.2.14. The null module
+              5.2.11. The tacinfo_cache module
+              5.2.12. The system module
+              5.2.13. The userdb module
+              5.2.14. The tee module
+              5.2.15. The null module
 
         5.3. MAVIS Scripting Language
 
@@ -680,7 +681,37 @@ session  required       pam_opendirectory.so
    Take care.
      __________________________________________________________
 
-5.2.11. The system module
+5.2.11. The tacinfo_cache module
+
+   This module implements on-disk caching of authentication
+   attributes for later authorization. It may be useful to reduce
+   load from the backend, or just to share RADIUS authorization
+   data between tac_plus worker processes.
+     __________________________________________________________
+
+5.2.11.1. Configuration directives
+
+     * userid = UserID
+       Specifies the uid to use for disk access.
+     * groupid = GroupID
+       Specifies the gid to use for disk access.
+     * directory CacheDir
+       Specifies the directory to use for caching. Please consider
+       that the daemon will not clean up the files/directories in
+       there.
+     __________________________________________________________
+
+5.2.11.2. Example
+
+mavis module = tacinfo_cache {
+  directory = /tmp/tacinfo
+}
+mavis module = external {
+  ...
+}
+     __________________________________________________________
+
+5.2.12. The system module
 
    This module implements FTP authentication via UNIX system
    accounts or accounts defined in UNIX password-style files.
@@ -693,7 +724,7 @@ session  required       pam_opendirectory.so
    is required.
      __________________________________________________________
 
-5.2.11.1. Configuration directives
+5.2.12.1. Configuration directives
 
      * chroot = ( yes | no )
        This activates a chroot environment for system users
@@ -724,20 +755,20 @@ openssl x509 -subject -noout -in cert.pem
        Enables checking of the specified file type.
      __________________________________________________________
 
-5.2.11.2. Railroad Diagram
+5.2.12.2. Railroad Diagram
 
    [SystemConf.eps]
 
    Railroad diagram: SystemConf
      __________________________________________________________
 
-5.2.12. The userdb module
+5.2.13. The userdb module
 
    This module can be used to define static users, e.g. for FTP.
    It requires the auth module for user authentication.
      __________________________________________________________
 
-5.2.12.1. Configuration directives
+5.2.13.1. Configuration directives
 
    Syntax for defining users is user = UserName { ... }. The
    following configuration directives inside the curly brackets
@@ -762,14 +793,14 @@ openssl x509 -subject -noout -in cert.pem
      * set AttributeName = Value
      __________________________________________________________
 
-5.2.12.2. Railroad Diagram
+5.2.13.2. Railroad Diagram
 
    [UserDBConf.eps]
 
    Railroad diagram: UserDBConf
      __________________________________________________________
 
-5.2.12.3. Example
+5.2.13.3. Example
 
    The following is a valid configuration for ftpd which utilizes
    various MAVIS backends:
@@ -808,7 +839,7 @@ id = ftpd {
 }
      __________________________________________________________
 
-5.2.13. The tee module
+5.2.14. The tee module
 
    This module is used for development only. It writes sent and
    received attribute-value pairs to disk in a format which may,
@@ -816,7 +847,7 @@ id = ftpd {
    description of the external module).
      __________________________________________________________
 
-5.2.13.1. Configuration directives
+5.2.14.1. Configuration directives
 
    Available configuration options are:
 
@@ -826,14 +857,14 @@ id = ftpd {
      * path ( in | out ) Path
      __________________________________________________________
 
-5.2.13.2. Railroad Diagram
+5.2.14.2. Railroad Diagram
 
    [TeeConf.eps]
 
    Railroad diagram: TeeConf
      __________________________________________________________
 
-5.2.14. The null module
+5.2.15. The null module
 
    This module comes without any functionality on its own. It may
    however be used in conjunction with the scripting feature

@@ -58,7 +58,7 @@
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: dump.c,v 1.73 2020/12/26 15:35:11 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: dump.c,v 1.74 2020/12/29 14:11:23 marc Exp marc $";
 
 struct i2s {
     int key;
@@ -322,7 +322,7 @@ void dump_tacacs_pak(tac_session * session, tac_pak_hdr * hdr)
 	    struct authen_reply *authen = tac_payload(hdr, struct authen_reply *);
 
 	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
-		   "AUTHEN status=%d (%s) flags=0x%x", authen->status, summarise_outgoing_packet_type(hdr), authen->flags);
+		   "AUTHEN, status=%d (%s) flags=0x%x", authen->status, summarise_outgoing_packet_type(hdr), authen->flags);
 	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg_len=%d, data_len=%d", ntohs(authen->msg_len), ntohs(authen->data_len));
 	    /* start of variable length data is here */
 	    p = (char *) authen + TAC_AUTHEN_REPLY_FIXED_FIELDS_SIZE;
@@ -336,7 +336,7 @@ void dump_tacacs_pak(tac_session * session, tac_pak_hdr * hdr)
 	    struct author_reply *author = tac_payload(hdr, struct author_reply *);
 	    unsigned char *argsizep;
 
-	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "AUTHOR/REPLY status=%d (%s) ", author->status, summarise_outgoing_packet_type(hdr));
+	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "AUTHOR/REPLY, status=%d (%s) ", author->status, summarise_outgoing_packet_type(hdr));
 	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
 		   "msg_len=%d, data_len=%d, arg_cnt=%d", ntohs(author->msg_len), ntohs(author->data_len), author->arg_cnt);
 	    p = (char *) author + TAC_AUTHOR_REPLY_FIXED_FIELDS_SIZE;
@@ -354,7 +354,7 @@ void dump_tacacs_pak(tac_session * session, tac_pak_hdr * hdr)
 	    struct acct_reply *acct = tac_payload(hdr, struct acct_reply *);
 
 	    report(session, LOG_DEBUG, DEBUG_PACKET_FLAG,
-		   "ACCT/REPLY status=%d, msg_len=%d, data_len=%d", acct->status, ntohs(acct->msg_len), ntohs(acct->data_len));
+		   "ACCT/REPLY, status=%d, msg_len=%d, data_len=%d", acct->status, ntohs(acct->msg_len), ntohs(acct->data_len));
 	    p = (char *) acct + TAC_ACCT_REPLY_FIXED_FIELDS_SIZE;
 	    report_string(session, LOG_DEBUG, DEBUG_PACKET_FLAG, "msg", p, ntohs(acct->msg_len));
 	    p += ntohs(acct->msg_len);

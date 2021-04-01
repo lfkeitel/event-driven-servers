@@ -7,7 +7,7 @@
 # (C) 2002-2011 by Marc Huber <Marc.Huber@web.de>
 # All rights reserved.
 #
-# $Id: configure,v 1.68 2020/03/02 18:11:42 marc Exp $
+# $Id: configure,v 1.70 2020/12/29 11:45:08 marc Exp marc $
 #
 
 use strict;
@@ -18,7 +18,6 @@ if (eval("require POSIX")) {
 	($sysname, undef, $release, undef, $machine) = POSIX::uname();
 	$cwd = POSIX::getcwd();
 } else {
-	import POSIX;
 	$sysname = `uname -s`;
 	$release = `uname -r`;
 	$machine = `uname -m`;
@@ -139,7 +138,7 @@ Recognized arguments:	Defaults:
 The C compiler used is usually gcc. You may override that choice by
 specifiying a different one:
   --with-cc=CC
-For example, on, on MacOS X the following creates universal binaries with
+For example, on MacOS X the following creates universal binaries with
 PPC and x86 code, both 32 and 64 bit:
   ./configure "--with-cc=gcc -arch ppc64 -arch ppc -arch i386 -arch x86_64"
 

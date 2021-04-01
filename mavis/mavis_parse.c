@@ -99,7 +99,7 @@
 #include "spawnd_headers.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.179 2020/12/05 14:43:49 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.180 2021/01/26 17:18:46 marc Exp marc $";
 
 struct common_data common_data;
 
@@ -702,15 +702,6 @@ void sym_get(struct sym *sym)
 	parse(sym, S_equal);
 	int b = parse_bool(sym);
 	if (b) {
-	    common_data.regex_match_case |= 1UL;
-#ifdef WITH_PCRE
-	    common_data.regex_pcre_flags = PCRE_CASELESS;
-#endif
-#ifdef WITH_PCRE2
-	    common_data.regex_pcre_flags = PCRE2_CASELESS | PCRE2_UTF;
-#endif
-	    common_data.regex_posix_flags = REG_ICASE;
-	} else {
 	    common_data.regex_match_case &= ~1LL;
 #ifdef WITH_PCRE
 	    common_data.regex_pcre_flags = 0;
@@ -719,6 +710,15 @@ void sym_get(struct sym *sym)
 	    common_data.regex_pcre_flags = 0;
 #endif
 	    common_data.regex_posix_flags = 0;
+	} else {
+	    common_data.regex_match_case |= 1UL;
+#ifdef WITH_PCRE
+	    common_data.regex_pcre_flags = PCRE_CASELESS;
+#endif
+#ifdef WITH_PCRE2
+	    common_data.regex_pcre_flags = PCRE2_CASELESS | PCRE2_UTF;
+#endif
+	    common_data.regex_posix_flags = REG_ICASE;
 	}
     }
     if (sym->code == S_include && !sym->flag_prohibit_include) {

@@ -3,7 +3,7 @@
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: h_site_checksum.c,v 1.30 2020/12/08 18:21:43 marc Exp $
+ * $Id: h_site_checksum.c,v 1.31 2021/03/19 19:20:20 marc Exp marc $
  *
  */
 
@@ -13,7 +13,7 @@
 #  include <openssl/evp.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: h_site_checksum.c,v 1.30 2020/12/08 18:21:43 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: h_site_checksum.c,v 1.31 2021/03/19 19:20:20 marc Exp marc $";
 
 static void md_crc32_update(struct context *ctx, u_char * s, size_t len)
 {
@@ -22,7 +22,7 @@ static void md_crc32_update(struct context *ctx, u_char * s, size_t len)
 
 static void md_md5_update(struct context *ctx, u_char * s, size_t len)
 {
-    MD5Update(&ctx->checksum.md5context, s, len);
+    myMD5Update(&ctx->checksum.md5context, s, len);
 }
 
 #ifdef WITH_SSL
@@ -43,7 +43,7 @@ static char *md_md5_final(struct context *ctx)
 {
     static char d[33];
     u_char md[16];
-    MD5Final(md, &ctx->checksum.md5context);
+    myMD5Final(md, &ctx->checksum.md5context);
     tohex(md, 16, d);
     return d;
 }
@@ -67,7 +67,7 @@ static void md_crc32_init(struct context *ctx)
 
 static void md_md5_init(struct context *ctx)
 {
-    MD5Init(&ctx->checksum.md5context);
+    myMD5Init(&ctx->checksum.md5context);
 }
 
 #ifdef WITH_SSL

@@ -41,8 +41,8 @@ typedef struct {
     u_char buffer[64];		/* input buffer */
 } myMD5_CTX;
 
-void MD5Init(myMD5_CTX *);
-void MD5Update(myMD5_CTX *, void *, size_t);
-void MD5Final(u_char[16], myMD5_CTX *);
+void myMD5Init(myMD5_CTX *);
+void myMD5Update(myMD5_CTX *, void *, size_t);
+void myMD5Final(u_char[16], myMD5_CTX *);
 
 #endif

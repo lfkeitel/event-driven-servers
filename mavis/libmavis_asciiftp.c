@@ -3,11 +3,11 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_asciiftp.c,v 1.16 2015/03/14 06:11:27 marc Exp $
+ * $Id: libmavis_asciiftp.c,v 1.17 2021/03/21 08:57:21 marc Exp marc $
  *
  */
 
-#define __MAVIS_asciiftp__
+#define MAVIS_name "asciiftp"
 
 #include "misc/sysconf.h"
 #include "misc/strops.h"
@@ -19,7 +19,7 @@
 #include <grp.h>
 #include <dlfcn.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_asciiftp.c,v 1.16 2015/03/14 06:11:27 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_asciiftp.c,v 1.17 2021/03/21 08:57:21 marc Exp marc $";
 
 #define MAVIS_CTX_PRIVATE	\
 	char *asciiftp_file;	\
@@ -243,5 +243,4 @@ static void mavis_new(mavis_ctx * mcx)
     mcx->asciiftp_gid_max = -1;
 }
 
-#define MAVIS_name "asciiftp"
 #include "mavis_glue.c"

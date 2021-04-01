@@ -2,7 +2,7 @@ TACACS+
 
 Marc Huber
 
-   $Id: manual.xml,v 1.429 2020/12/29 09:21:14 marc Exp marc $
+   $Id: manual.xml,v 1.433 2021/01/10 14:39:33 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -837,7 +837,8 @@ line XX
 
 4.3.2.2. Authentication
 
-     * password ( max-attempts = integer | backoff = seconds )
+     * password ( max-attempts = integer | backoff = seconds | acl
+       = acl )
        backoff sets a backoff time for failed authentications. The
        daemon will wait for seconds seconds before returning a
        final authentication failure (password incorrect) message.
@@ -901,6 +902,17 @@ Username:
        dialog with a new TACACS+ session or to close the
        (Telnet/SSH/...) session to the user if TACACS+
        authentication fails.
+       password acl may be used to perform simple compliance
+       checks on user passwords. For example, to enforce a minimum
+       password length of 6 characters you may try
+acl script = password-compliance {
+    if (password =~ /^....../)
+        permit
+    deny
+}
+password acl = password-compliance
+       Authentications using passwords that fail the check will be
+       rejected.
      * anonymous-enable = ( permit | deny )
        Several broken TACACS+ implementations send no or an
        invalid username in enable packets. Setting this option to
@@ -4669,7 +4681,8 @@ debug multilink
 
      * draft-grant-tacacs-02.txt - The TACACS+ Protocol (Version
        1.78)
-     * ftp://ftp-eng.cisco.com/pub/tacacs/
+     * RFC8907: The Terminal Access Controller Access-Control
+       System Plus (TACACS+) Protocol
      __________________________________________________________
 
 13. Copyrights and Acknowledgements

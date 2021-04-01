@@ -6,12 +6,12 @@
  *
  * general av-pair caching
  *
- * $Id: libmavis_cache.c,v 1.26 2015/03/14 06:11:27 marc Exp $
+ * $Id: libmavis_cache.c,v 1.27 2021/03/21 08:57:21 marc Exp marc $
  *
  */
 
 #define MAVIS_name "cache"
-#define __MAVIS_cache__
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
@@ -27,7 +27,7 @@
 #include "misc/rb.h"
 #include "misc/crc32.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_cache.c,v 1.26 2015/03/14 06:11:27 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_cache.c,v 1.27 2021/03/21 08:57:21 marc Exp marc $";
 
 #define AVPC_TABLE_SIZE 9
 

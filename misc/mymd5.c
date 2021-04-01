@@ -26,12 +26,12 @@
  */
 
 /*
- * $Id: mymd5.c,v 1.9 2015/03/14 06:11:29 marc Exp marc $
+ * $Id: mymd5.c,v 1.10 2021/03/19 19:39:22 marc Exp marc $
  */
 
 #include "misc/sysconf.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mymd5.c,v 1.9 2015/03/14 06:11:29 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mymd5.c,v 1.10 2021/03/19 19:39:22 marc Exp marc $";
 
 #include "misc/mymd5.h"
 #include <string.h>
@@ -56,12 +56,12 @@ static const char rcsid[] __attribute__ ((used)) = "$Id: mymd5.c,v 1.9 2015/03/1
 #define S43 15
 #define S44 21
 
-static void MD5Transform(u_int[4], u_char[64]);
+static void myMD5Transform(u_int[4], u_char[64]);
 static void Encode(u_char *, u_int *, u_int);
 static void Decode(u_int *, u_char *, u_int);
 
-#define MD5_memcpy memcpy
-#define MD5_memset memset
+#define myMD5_memcpy memcpy
+#define myMD5_memset memset
 
 static u_char PADDING[64] = {
     0x80, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -106,7 +106,7 @@ static u_char PADDING[64] = {
 
 /* MD5 initialization. Begins an MD5 operation, writing a new context.
  */
-void MD5Init(context)
+void myMD5Init(context)
 myMD5_CTX *context;		/* context */
 {
     context->count[0] = context->count[1] = 0;
@@ -122,7 +122,7 @@ myMD5_CTX *context;		/* context */
    operation, processing another message block, and updating the
    context.
  */
-void MD5Update(context, input, inputLen)
+void myMD5Update(context, input, inputLen)
 myMD5_CTX *context;		/* context */
 void *input;			/* input block */
 size_t inputLen;		/* length of input block */
@@ -144,24 +144,24 @@ size_t inputLen;		/* length of input block */
     /* Transform as many times as possible.
      */
     if (inputLen >= partLen) {
-	MD5_memcpy((u_char *) & context->buffer[index], (u_char *) input, partLen);
-	MD5Transform(context->state, context->buffer);
+	myMD5_memcpy((u_char *) & context->buffer[index], (u_char *) input, partLen);
+	myMD5Transform(context->state, context->buffer);
 
 	for (i = partLen; i + 63 < inputLen; i += 64)
-	    MD5Transform(context->state, &((u_char *) input)[i]);
+	    myMD5Transform(context->state, &((u_char *) input)[i]);
 
 	index = 0;
     } else
 	i = 0;
 
     /* Buffer remaining input */
-    MD5_memcpy((u_char *) & context->buffer[index], (u_char *) & ((u_char *) input)[i], inputLen - i);
+    myMD5_memcpy((u_char *) & context->buffer[index], (u_char *) & ((u_char *) input)[i], inputLen - i);
 }
 
 /* MD5 finalization. Ends an MD5 message-digest operation, writing the
    the message digest and zeroizing the context.
  */
-void MD5Final(digest, context)
+void myMD5Final(digest, context)
 u_char digest[16];		/* message digest */
 myMD5_CTX *context;		/* context */
 {
@@ -176,22 +176,22 @@ myMD5_CTX *context;		/* context */
      */
     index = (u_int) ((context->count[0] >> 3) & 0x3f);
     padLen = (index < 56) ? (56 - index) : (120 - index);
-    MD5Update(context, PADDING, padLen);
+    myMD5Update(context, PADDING, padLen);
 
     /* Append length (before padding) */
-    MD5Update(context, bits, (size_t) 8);
+    myMD5Update(context, bits, (size_t) 8);
 
     /* Store state in digest */
     Encode(digest, context->state, 16);
 
     /* Zeroize sensitive information.
      */
-    MD5_memset((u_char *) context, 0, sizeof(*context));
+    myMD5_memset((u_char *) context, 0, sizeof(*context));
 }
 
 /* MD5 basic transformation. Transforms state based on block.
  */
-static void MD5Transform(state, block)
+static void myMD5Transform(state, block)
 u_int state[4];
 u_char block[64];
 {
@@ -278,7 +278,7 @@ u_char block[64];
 
     /* Zeroize sensitive information.
      */
-    MD5_memset((u_char *) x, 0, sizeof(x));
+    myMD5_memset((u_char *) x, 0, sizeof(x));
 }
 
 /* Encodes input (u_int) into output (u_char). Assumes len is

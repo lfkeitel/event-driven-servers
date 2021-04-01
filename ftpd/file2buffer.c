@@ -3,14 +3,14 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: file2buffer.c,v 1.12 2015/03/14 06:11:24 marc Exp marc $
+ * $Id: file2buffer.c,v 1.13 2021/03/19 19:20:12 marc Exp marc $
  *
  */
 
 #include "headers.h"
 #include "misc/tohex.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: file2buffer.c,v 1.12 2015/03/14 06:11:24 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: file2buffer.c,v 1.13 2021/03/19 19:20:12 marc Exp marc $";
 
 /*
  * This code is somewhat similar to the one found in h_site_checksum.c,
@@ -39,7 +39,7 @@ void file2buffer(struct context *ctx, int cur __attribute__ ((unused)))
 	    if (ctx->conversion == CONV_CRC)
 		ctx->checksum.crc32 = crc32_update(ctx->checksum.crc32, (u_char *) ctx->chunk_start, len);
 	    else
-		MD5Update(&ctx->checksum.md5context, (u_char *) ctx->chunk_start, len);
+		myMD5Update(&ctx->checksum.md5context, (u_char *) ctx->chunk_start, len);
 	    chunk_release(ctx, len);
 	}
 
@@ -57,7 +57,7 @@ void file2buffer(struct context *ctx, int cur __attribute__ ((unused)))
 			     "%u %llu %s\n", crc32_final(ctx->checksum.crc32, ctx->offset), (unsigned long long) ctx->offset, ctx->filename + ctx->rootlen);
 	    else {
 		char digest[16], d[33];
-		MD5Final((u_char *) digest, &ctx->checksum.md5context);
+		myMD5Final((u_char *) digest, &ctx->checksum.md5context);
 		tohex((u_char *) digest, 16, d);
 		ctx->dbufi->length = snprintf(ctx->dbufi->buf, ctx->dbufi->size, "%s  %s\n", d, ctx->filename + ctx->rootlen);
 	    }

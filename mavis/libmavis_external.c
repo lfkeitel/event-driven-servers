@@ -3,10 +3,9 @@
  * (C)2001-2015 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  * 
- * $Id: libmavis_external.c,v 1.69 2020/05/11 16:35:10 marc Exp marc $
+ * $Id: libmavis_external.c,v 1.70 2021/03/21 08:57:21 marc Exp marc $
  */
 
-#define __MAVIS_external__
 #define MAVIS_name "external"
 
 #include <stdio.h>
@@ -34,7 +33,7 @@
 #include "misc/io_child.h"
 #include "misc/ostype.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_external.c,v 1.69 2020/05/11 16:35:10 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_external.c,v 1.70 2021/03/21 08:57:21 marc Exp marc $";
 
 #define REAPMAX 30		/* terminated child history table size */
 #define REAPINT 30		/* terminated child interval (seconds) */

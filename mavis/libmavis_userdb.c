@@ -3,11 +3,11 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_userdb.c,v 1.13 2015/03/14 06:11:28 marc Exp $
+ * $Id: libmavis_userdb.c,v 1.14 2021/03/21 08:57:22 marc Exp marc $
  *
  */
 
-#define __MAVIS_userdb__
+#define MAVIS_name "userdb"
 
 #include "misc/sysconf.h"
 #include "misc/strops.h"
@@ -21,7 +21,7 @@
 #include <grp.h>
 #include <dlfcn.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_userdb.c,v 1.13 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_userdb.c,v 1.14 2021/03/21 08:57:22 marc Exp marc $";
 
 #define MAVIS_CTX_PRIVATE	\
 	rb_tree_t *usertable;
@@ -232,5 +232,4 @@ static void mavis_new(mavis_ctx * mcx)
     mcx->usertable = RB_tree_new(compare_user, (void (*)(void *)) free_user);
 }
 
-#define MAVIS_name "userdb"
 #include "mavis_glue.c"

@@ -5,11 +5,20 @@
  *
  * Glue code and public interface functions for MAVIS modules.
  *
- * $Id: mavis_glue.c,v 1.28 2021/03/21 08:57:39 marc Exp marc $
+ * $Id: mavis_glue.c,v 1.26 2015/03/14 06:11:28 marc Exp marc $
  *
  */
 
-static const char mavis_glue_rcsid[] __attribute__ ((used)) = "$Id: mavis_glue.c,v 1.28 2021/03/21 08:57:39 marc Exp marc $";
+static const char mavis_glue_rcsid[] __attribute__ ((used)) = "$Id: mavis_glue.c,v 1.26 2015/03/14 06:11:28 marc Exp marc $";
+
+#ifdef MAVIS_name
+#ifdef DEBUG
+#undef DebugIn
+#undef DebugOut
+#define DebugIn(A) Debug  ((A, "+ "MAVIS_name":%s\n", __func__))
+#define DebugOut(A) Debug ((A, "- "MAVIS_name":%s\n", __func__))
+#endif
+#endif
 
 #include "log.h"
 #include "misc/version.h"

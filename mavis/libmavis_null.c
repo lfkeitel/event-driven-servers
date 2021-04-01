@@ -3,18 +3,16 @@
  * (C)1999-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_null.c,v 1.9 2015/03/14 06:11:28 marc Exp $
+ * $Id: libmavis_null.c,v 1.10 2021/03/21 08:57:21 marc Exp marc $
  *
  */
 
-#define __MAVIS_null__
 #define MAVIS_name "null"
 
 #include <sys/types.h>
-
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_null.c,v 1.9 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_null.c,v 1.10 2021/03/21 08:57:21 marc Exp marc $";
 
 #include "mavis.h"
 

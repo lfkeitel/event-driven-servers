@@ -4,13 +4,13 @@
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: conversions.c,v 1.11 2015/03/14 06:11:24 marc Exp marc $
+ * $Id: conversions.c,v 1.12 2021/03/19 19:20:09 marc Exp marc $
  *
  */
 
 #include "headers.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: conversions.c,v 1.11 2015/03/14 06:11:24 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: conversions.c,v 1.12 2021/03/19 19:20:09 marc Exp marc $";
 
 struct conv_table {
     char conv;
@@ -51,7 +51,7 @@ int convstat(struct context *ctx, struct stat *st, char *path)
 	if (pickystat(ctx, st, path))
 	    path[len - ct->len] = ct->ext[0];
 	else {
-	    MD5Init(&ctx->checksum.md5context);
+	    myMD5Init(&ctx->checksum.md5context);
 	    ctx->conversion = conv;
 	}
 	break;

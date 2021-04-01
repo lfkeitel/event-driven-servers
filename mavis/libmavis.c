@@ -2,7 +2,7 @@
  * libmavis.c
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: libmavis.c,v 1.26 2015/03/14 06:11:27 marc Exp $
+ * $Id: libmavis.c,v 1.30 2021/03/19 19:20:59 marc Exp marc $
  *
  */
 
@@ -23,7 +23,7 @@
 #include "mavis.h"
 #include "misc/version.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis.c,v 1.26 2015/03/14 06:11:27 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis.c,v 1.30 2021/03/19 19:20:59 marc Exp marc $";
 
 int mavis_method_add(mavis_ctx ** mcx, struct io_context *ioctx, char *path, char *id)
 {
@@ -144,11 +144,11 @@ char *av_addserial(av_ctx * ac)
 	char b[30];
 	size_t i, len = (int) sizeof(b);
 	myMD5_CTX m;
-	MD5Init(&m);
+	myMD5Init(&m);
 	for (i = 0; i < AV_A_ARRAYSIZE; i++)
 	    if (ac->arr[i])
-		MD5Update(&m, (u_char *) ac->arr[i], strlen(ac->arr[i]));
-	MD5Final(u, &m);
+		myMD5Update(&m, (u_char *) ac->arr[i], strlen(ac->arr[i]));
+	myMD5Final(u, &m);
 	base64enc((char *) u, (size_t) 16, b, &len);
 	av_set(ac, AV_A_SERIAL, b);
     }
@@ -265,7 +265,14 @@ void av_set(av_ctx * ac, int av_attribute, char *av_value)
 
     Xfree(&ac->arr[av_attribute]);
 
-    ac->arr[av_attribute] = av_value ? Xstrdup(av_value) : NULL;
+    if (av_value) {
+	char *val = Xstrdup(av_value);
+	char *nl = strchr(val, (int) '\n');
+	if (nl)
+	    *nl = 0;
+	ac->arr[av_attribute] = val;
+    } else
+	ac->arr[av_attribute] = NULL;
 }
 
 void av_setf(av_ctx * ac, int av_attribute, char *format, ...)

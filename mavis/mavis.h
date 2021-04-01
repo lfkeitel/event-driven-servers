@@ -3,7 +3,7 @@
  * (C)1998-2015 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: mavis.h,v 1.82 2019/03/31 09:14:22 marc Exp marc $
+ * $Id: mavis.h,v 1.83 2021/03/21 09:18:26 marc Exp marc $
  *
  */
 
@@ -432,5 +432,12 @@ void ipc_delete(void);
 int mavis_check_version(char *);
 
 void mavis_detach(void);
+
+#if defined(MAVIS_name) && defined(DEBUG)
+#  undef DebugIn
+#  undef DebugOut
+#  define DebugIn(A) Debug  ((A, "+ "MAVIS_name":%s\n", __func__))
+#  define DebugOut(A) Debug ((A, "- "MAVIS_name":%s\n", __func__))
+#endif
 
 #endif				/* __MAVIS_H_ */

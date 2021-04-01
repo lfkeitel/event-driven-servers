@@ -4,11 +4,10 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_remote.c,v 1.28 2015/11/01 08:33:11 marc Exp $
+ * $Id: libmavis_remote.c,v 1.29 2021/03/21 08:57:21 marc Exp marc $
  *
  */
 
-#define __MAVIS_remote
 #define MAVIS_name "remote"
 
 #include "misc/sysconf.h"
@@ -54,7 +53,7 @@ struct remote_addr_s;
 #include "mavis.h"
 #include "av_send.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_remote.c,v 1.28 2015/11/01 08:33:11 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_remote.c,v 1.29 2021/03/21 08:57:21 marc Exp marc $";
 
 struct remote_addr_s {
     sockaddr_union sa;

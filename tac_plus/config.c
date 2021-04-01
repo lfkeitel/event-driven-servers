@@ -58,6 +58,7 @@
 
 #include "headers.h"
 #include "misc/version.h"
+#include "misc/strops.h"
 #include <setjmp.h>
 #include <pwd.h>
 #include <grp.h>
@@ -87,7 +88,7 @@
 
 #include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.870 2020/12/26 15:35:11 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: config.c,v 1.874 2021/01/27 15:09:44 marc Exp marc $";
 
 struct tac_acllist {
     struct tac_acllist *next;
@@ -560,8 +561,20 @@ void parse_decls_real(struct sym *sym, tac_realm * r)
 		parse(sym, S_equal);
 		r->authfail_delay = parse_seconds(sym);
 		continue;
+	    case S_acl:
+		tac_sym_get(sym);
+		parse(sym, S_equal);
+		if (sym->code == S_not) {
+		    r->password_acl_negate = BISTATE_YES;
+		    tac_sym_get(sym);
+		}
+		r->password_acl = tac_acl_lookup(sym->buf);
+		if (!r->password_acl)
+		    parse_error(sym, "ACL '%s' not found)", sym->buf);
+		tac_sym_get(sym);
+		continue;
 	    default:
-		parse_error_expect(sym, S_maxattempts, S_backoff, S_unknown);
+		parse_error_expect(sym, S_acl, S_maxattempts, S_backoff, S_unknown);
 	    }
 	case S_pap:
 	    tac_sym_get(sym);
@@ -3017,6 +3030,7 @@ static void parse_cmd(struct sym *sym, tac_user * user, struct node_svc *shell)
     len = sizeof(struct node_cmd) + strlen(sym->buf);
     cmd = alloca(len);
     strcpy(cmd->name, sym->buf);
+    lower(cmd->name);
     cmd = RB_lookup(shell->sub, cmd);
     if (!cmd) {
 	cmd = mempool_malloc(user->pool, len);
@@ -4695,11 +4709,16 @@ static int get_cmd_node_func(tac_user * u)
     struct node_cmd *cmd = NULL;
     enum token svc_dflt = S_unknown;
     tac_session *session = C.session;
+    char *cmdname;
 
     if (service_is_prohibited(session, u, codestring[S_shell]))
 	return 0;
 
-    lookup_svc(session, u, codestring[S_shell], S_shell, NULL, C.cmdname, &shell, NULL, &cmd, &svc_dflt, NULL, &C.msg_debug, &C.msg_permit, &C.msg_deny);
+    cmdname = alloca(strlen(C.cmdname) + 1);
+    strcpy(cmdname, C.cmdname);
+    lower(cmdname);
+
+    lookup_svc(session, u, codestring[S_shell], S_shell, NULL, cmdname, &shell, NULL, &cmd, &svc_dflt, NULL, &C.msg_debug, &C.msg_permit, &C.msg_deny);
 
     if (!shell)
 	switch (svc_dflt) {
@@ -4808,7 +4827,7 @@ struct tac_script_cond_multi {
 };
 
 struct tac_script_cond_single {
-    enum token a;		// S_context, S_cmd, S_message, S_nac, S_nas, S_nacname, S_port, S_user
+    enum token a;		// S_context, S_cmd, S_message, S_nac, S_nas, S_nacname, S_port, S_user, S_password
     void *v;			// v2, really
     char *s;			// string
 };
@@ -4918,6 +4937,7 @@ static struct tac_script_cond *tac_script_cond_parse_r(tac_user * u, struct sym 
     case S_aaarealm:
     case S_port:
     case S_user:
+    case S_password:
 	m = tac_script_cond_new(u, S_equal);
 	m->u.s.a = sym->code;
 
@@ -5026,7 +5046,7 @@ static struct tac_script_cond *tac_script_cond_parse_r(tac_user * u, struct sym 
 	}
     default:
 	parse_error_expect(sym, S_leftbra, S_acl, S_exclmark, S_command,
-			   S_context, S_time, S_cmd, S_nac, S_nas, S_nacname, S_nasname, S_nasrealm, S_nacrealm, S_port, S_user, S_unknown);
+			   S_context, S_time, S_cmd, S_nac, S_nas, S_nacname, S_nasname, S_nasrealm, S_nacrealm, S_port, S_user, S_password, S_unknown);
     }
     return NULL;
 }
@@ -5219,6 +5239,9 @@ static int tac_script_cond_eval(tac_session * session, char *cmd, struct tac_scr
 	    break;
 	case S_user:
 	    v = session->username;
+	    break;
+	case S_password:
+	    v = session->password_new ? session->password_new : session->password;
 	    break;
 	default:;
 	}

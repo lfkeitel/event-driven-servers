@@ -76,7 +76,7 @@
 # include <openssl/sha.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.398 2020/12/15 14:24:38 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: authen.c,v 1.405 2021/03/19 19:19:52 marc Exp marc $";
 
 struct authen_data {
     u_char *data;
@@ -112,6 +112,7 @@ struct hint_struct hints[hint_max] = {
     {" denied (NAS address not permitted)", "AUTHCFAIL-NAS"},
     {" denied (NAC address not permitted)", "AUTHCFAIL-NAC"},
     {" denied (invalid challenge length)", "AUTHCFAIL-BAD-CHALLENGE-LENGTH"},
+    {" denied (minimum password requirements not met)", "AUTHCFAIL-WEAKPASSWORD"},
 };
 
 static char *get_hint(tac_session * session, enum hint_enum h)
@@ -130,6 +131,84 @@ static char *get_hint(tac_session * session, enum hint_enum h)
 	return hint;
     }
     return hints[h].plain;
+}
+
+static void report_auth(tac_session * session, char *what, enum hint_enum hint)
+{
+    char *aaarealm = alloca(strlen(session->ctx->aaa_realm->name) + 40);
+    char *nacrealm = alloca(strlen(session->ctx->nac_realm->name) + 40);
+    char *hint_augmented;
+
+    rb_tree_t *rbt = session->ctx->aaa_realm->access;
+
+    if ((session->ctx->aaa_realm == config.top_realm) || !session->username[0])
+	*aaarealm = 0;
+    else {
+	strcpy(aaarealm, " (realm: ");
+	strcat(aaarealm, session->ctx->aaa_realm->name);
+	strcat(aaarealm, ")");
+    }
+
+    if ((session->ctx->nac_realm == config.top_realm) || !session->username[0])
+	*nacrealm = 0;
+    else {
+	strcpy(nacrealm, " (realm: ");
+	strcat(nacrealm, session->ctx->nac_realm->name);
+	strcat(nacrealm, ")");
+    }
+
+    hint_augmented = get_hint(session, hint);
+
+    report(session, LOG_INFO, ~0,
+	   "%s%s%s%s%s%s%s%s%s%s%s",
+	   what,
+	   session->username[0] ? " for '" : "", session->username,
+	   session->username[0] ? "'" : "", aaarealm,
+	   session->nac_address_ascii[0] ? " from " : "",
+	   session->nac_address_ascii, nacrealm, session->nas_port[0] ? " on " : "", session->nas_port, hint_augmented);
+
+    log_start(rbt, session->ctx->nas_address_ascii, hints[hint].msgid);
+    log_write(rbt, session->username, strlen(session->username));
+    log_write_separator(rbt);
+    if (session->nas_port)
+	log_write(rbt, session->nas_port, strlen(session->nas_port));
+    log_write_separator(rbt);
+    if (session->nac_address_ascii)
+	log_write(rbt, session->nac_address_ascii, strlen(session->nac_address_ascii));
+    log_write_separator(rbt);
+    log_write(rbt, what, strlen(what));
+    log_write(rbt, hint_augmented, strlen(hint_augmented));
+    log_flush(rbt);
+}
+
+static int password_requirements_failed(tac_session * session, char *what)
+{
+    tac_realm *r = session->ctx->aaa_realm;
+
+    if (r->password_acl) {
+	enum token token;
+	u_int debug = session->debug;
+	if (!(session->debug & DEBUG_USERINPUT_FLAG))
+	    session->debug = 0;
+	token = eval_tac_acl(session, NULL, r->password_acl);
+	session->debug = debug;
+	switch (token) {
+	case S_permit:
+	    if (r->password_acl_negate)
+		token = S_deny;
+	    break;
+	default:
+	    if (r->password_acl_negate)
+		token = S_permit;
+	}
+	if (token != S_permit) {
+	    report(session, LOG_ERR, ~0, "password doesn't meet minimum requirements");
+	    report_auth(session, what, hint_weak_password);
+	    send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_FAIL, "Password doesn't meet minimum requirements.\n", 0, NULL, 0, 0);
+	    return -1;
+	}
+    }
+    return 0;
 }
 
 static int user_invalid(tac_user * user, enum hint_enum *hint)
@@ -259,54 +338,6 @@ void set_taglist(tac_session * session)
 	session->tag = eval_taglist(session, session->user);
 }
 
-static void report_auth(tac_session * session, char *what, enum hint_enum hint)
-{
-    char *aaarealm = alloca(strlen(session->ctx->aaa_realm->name) + 40);
-    char *nacrealm = alloca(strlen(session->ctx->nac_realm->name) + 40);
-    char *hint_augmented;
-
-    rb_tree_t *rbt = session->ctx->aaa_realm->access;
-
-    if ((session->ctx->aaa_realm == config.top_realm) || !session->username[0])
-	*aaarealm = 0;
-    else {
-	strcpy(aaarealm, " (realm: ");
-	strcat(aaarealm, session->ctx->aaa_realm->name);
-	strcat(aaarealm, ")");
-    }
-
-    if ((session->ctx->nac_realm == config.top_realm) || !session->username[0])
-	*nacrealm = 0;
-    else {
-	strcpy(nacrealm, " (realm: ");
-	strcat(nacrealm, session->ctx->nac_realm->name);
-	strcat(nacrealm, ")");
-    }
-
-    hint_augmented = get_hint(session, hint);
-
-    report(session, LOG_INFO, ~0,
-	   "%s%s%s%s%s%s%s%s%s%s%s",
-	   what,
-	   session->username[0] ? " for '" : "", session->username,
-	   session->username[0] ? "'" : "", aaarealm,
-	   session->nac_address_ascii[0] ? " from " : "",
-	   session->nac_address_ascii, nacrealm, session->nas_port[0] ? " on " : "", session->nas_port, hint_augmented);
-
-    log_start(rbt, session->ctx->nas_address_ascii, hints[hint].msgid);
-    log_write(rbt, session->username, strlen(session->username));
-    log_write_separator(rbt);
-    if (session->nas_port)
-	log_write(rbt, session->nas_port, strlen(session->nas_port));
-    log_write_separator(rbt);
-    if (session->nac_address_ascii)
-	log_write(rbt, session->nac_address_ascii, strlen(session->nac_address_ascii));
-    log_write_separator(rbt);
-    log_write(rbt, what, strlen(what));
-    log_write(rbt, hint_augmented, strlen(hint_augmented));
-    log_flush(rbt);
-}
-
 #ifdef WITH_SSL
 # ifdef SUPPORT_ARAP
 static void do_arap(tac_session * session)
@@ -402,11 +433,11 @@ static void do_chap(tac_session * session)
 		u_char digest[MD5_LEN];
 		myMD5_CTX mdcontext;
 
-		MD5Init(&mdcontext);
-		MD5Update(&mdcontext, session->authen_data->data, (size_t) 1);
-		MD5Update(&mdcontext, (u_char *) session->passwdp->passwd[PW_CHAP]->value, strlen(session->passwdp->passwd[PW_CHAP]->value));
-		MD5Update(&mdcontext, session->authen_data->data + 1, (size_t) (session->authen_data->data_len - 1 - MD5_LEN));
-		MD5Final(digest, &mdcontext);
+		myMD5Init(&mdcontext);
+		myMD5Update(&mdcontext, session->authen_data->data, (size_t) 1);
+		myMD5Update(&mdcontext, (u_char *) session->passwdp->passwd[PW_CHAP]->value, strlen(session->passwdp->passwd[PW_CHAP]->value));
+		myMD5Update(&mdcontext, session->authen_data->data + 1, (size_t) (session->authen_data->data_len - 1 - MD5_LEN));
+		myMD5Final(digest, &mdcontext);
 
 		if (memcmp(digest, session->authen_data->data + session->authen_data->data_len - MD5_LEN, (size_t) MD5_LEN)) {
 		    res = TAC_PLUS_AUTHEN_STATUS_FAIL;
@@ -710,6 +741,8 @@ static void do_chpass(tac_session * session)
     if (!session->password && session->authen_data->msg) {
 	session->password = session->authen_data->msg;
 	session->authen_data->msg = NULL;
+	if (password_requirements_failed(session, "password change"))
+	    return;
     }
     if (!session->password) {
 	send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_GETDATA, "Old password: ", 0, NULL, 0, TAC_PLUS_REPLY_FLAG_NOECHO);
@@ -722,9 +755,15 @@ static void do_chpass(tac_session * session)
     if (!session->password_new && session->authen_data->msg) {
 	session->password_new = session->authen_data->msg;
 	session->authen_data->msg = NULL;
+	if (password_requirements_failed(session, "password change"))
+	    return;
     }
     if (!session->password_new) {
 	send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_GETPASS, "New password: ", 0, NULL, 0, TAC_PLUS_REPLY_FLAG_NOECHO);
+	return;
+    }
+    if (!session->password_new[0]) {
+	send_authen_reply(session, TAC_PLUS_AUTHEN_STATUS_FAIL, "Password change dialog aborted.\n", 0, NULL, 0, 0);
 	return;
     }
     if (!session->authen_data->msg) {
@@ -809,6 +848,8 @@ static void do_enable_login(tac_session * session)
     if (query_mavis_info_login(session, do_enable_login))
 	return;
 
+    snprintf(buf, sizeof(buf), "enable %d", session->priv_lvl);
+
     set_pwdat(session, &pwdat, &pw_ix);
 
     if (!pwdat || pwdat->type != S_follow) {
@@ -816,6 +857,8 @@ static void do_enable_login(tac_session * session)
 	if (session->authen_data->msg) {
 	    session->password = session->authen_data->msg;
 	    session->authen_data->msg = NULL;
+	    if (password_requirements_failed(session, buf))
+		return;
 	}
 
 	if (!session->password) {
@@ -834,8 +877,6 @@ static void do_enable_login(tac_session * session)
     res = check_access(session, pwdat, session->password, &hint, &resp, NULL);
 
     mempool_free(session->pool, &session->challenge);
-
-    snprintf(buf, sizeof(buf), "enable %d", session->priv_lvl);
 
     report_auth(session, buf, hint);
 
@@ -869,6 +910,8 @@ static void do_enable_augmented(tac_session * session)
 	    session->username = session->authen_data->msg;
 	    session->password = u;
 	    session->authen_data->msg = NULL;
+	    if (password_requirements_failed(session, "enable login"))
+		return;
 	    tac_rewrite_user(session);
 	    lookup_and_set_user(session);
 	}
@@ -995,6 +1038,8 @@ static void do_ascii_login(tac_session * session)
 	if (session->authen_data->msg) {
 	    session->password = session->authen_data->msg;
 	    session->authen_data->msg = NULL;
+	    if (password_requirements_failed(session, "shell login"))
+		return;
 	}
 
 	if (!session->password) {
@@ -1113,6 +1158,8 @@ static void do_enable_getuser(tac_session * session)
 	if (session->authen_data->msg) {
 	    session->password = session->authen_data->msg;
 	    session->authen_data->msg = NULL;
+	    if (password_requirements_failed(session, "enforced enable login"))
+		return;
 	}
 
 	if (!session->password) {
@@ -1403,6 +1450,8 @@ static void do_login(tac_session * session)
     if (!session->password) {
 	session->password = (char *) session->authen_data->data;
 	session->authen_data->data = NULL;
+	if (password_requirements_failed(session, "ascii login"))
+	    return;
     }
 
     lookup_and_set_user(session);
@@ -1449,6 +1498,8 @@ static void do_pap(tac_session * session)
 	session->password = (char *) session->authen_data->msg;
 	session->authen_data->msg = NULL;
     }
+    if (password_requirements_failed(session, "pap login"))
+	return;
 
     lookup_and_set_user(session);
     if (query_mavis_info_pap(session, do_pap))

@@ -6,11 +6,11 @@
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_pam.c,v 1.15 2015/03/14 06:11:28 marc Exp $
+ * $Id: libmavis_pam.c,v 1.16 2021/03/21 08:57:21 marc Exp marc $
  *
  */
 
-#define __MAVIS_pam__
+#define MAVIS_name "pam"
 
 #include "misc/sysconf.h"
 #include "misc/strops.h"
@@ -30,7 +30,7 @@
 #endif
 #include "groups.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_pam.c,v 1.15 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_pam.c,v 1.16 2021/03/21 08:57:21 marc Exp marc $";
 
 #define MAVIS_CTX_PRIVATE	\
 	int initialized;	\
@@ -227,5 +227,4 @@ static void mavis_new(mavis_ctx * pc)
     pc->ftp_chroot = -1;
 }
 
-#define MAVIS_name "pam"
 #include "mavis_glue.c"

@@ -59,7 +59,7 @@
 #include "headers.h"
 #include "misc/mymd5.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.151 2020/12/06 15:10:58 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: packet.c,v 1.152 2021/03/19 19:19:55 marc Exp marc $";
 
 static void write_packet(struct context *, tac_pak *);
 static tac_session *new_session(struct context *, tac_pak_hdr *);
@@ -75,14 +75,14 @@ static void md5_xor(tac_pak_hdr * hdr, char *key, int keylen)
 	    int min = minimum(data_len - i, 16);
 	    myMD5_CTX mdcontext;
 
-	    MD5Init(&mdcontext);
-	    MD5Update(&mdcontext, (u_char *) & hdr->session_id, sizeof(hdr->session_id));
-	    MD5Update(&mdcontext, (u_char *) key, keylen);
-	    MD5Update(&mdcontext, (u_char *) & hdr->version, sizeof(hdr->version));
-	    MD5Update(&mdcontext, (u_char *) & hdr->seq_no, sizeof(hdr->seq_no));
+	    myMD5Init(&mdcontext);
+	    myMD5Update(&mdcontext, (u_char *) & hdr->session_id, sizeof(hdr->session_id));
+	    myMD5Update(&mdcontext, (u_char *) key, keylen);
+	    myMD5Update(&mdcontext, (u_char *) & hdr->version, sizeof(hdr->version));
+	    myMD5Update(&mdcontext, (u_char *) & hdr->seq_no, sizeof(hdr->seq_no));
 	    if (i)
-		MD5Update(&mdcontext, (u_char *) hash[h ^ 1], MD5_LEN);
-	    MD5Final(hash[h], &mdcontext);
+		myMD5Update(&mdcontext, (u_char *) hash[h ^ 1], MD5_LEN);
+	    myMD5Final(hash[h], &mdcontext);
 
 	    for (j = 0; j < min; j++)
 		data[i + j] ^= hash[h][j];

@@ -3,11 +3,12 @@
  * (C)2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_groups.c,v 1.22 2020/04/28 16:47:29 marc Exp marc $
+ * $Id: libmavis_groups.c,v 1.28 2021/03/21 08:57:21 marc Exp marc $
  *
  */
 
-#define __MAVIS_groups__
+#define MAVIS_name "groups"
+
 #include "misc/sysconf.h"
 #include <stdio.h>
 #include <grp.h>
@@ -34,7 +35,7 @@
 
 #include <regex.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_groups.c,v 1.22 2020/04/28 16:47:29 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_groups.c,v 1.28 2021/03/21 08:57:21 marc Exp marc $";
 
 
 struct regex_list;
@@ -89,6 +90,7 @@ static void parse_filter_regex(struct sym *sym, struct regex_list **l)
 #else
 # ifdef WITH_PCRE2
 	    PCRE2_SIZE erroffset;
+	    (*l)->type = S_slash;
 	    (*l)->p = (void *)
 		pcre2_compile((PCRE2_SPTR8) sym->buf, PCRE2_ZERO_TERMINATED, PCRE2_MULTILINE | common_data.regex_pcre_flags, &errcode, &erroffset, NULL);
 	    if (!(*l)->p) {
@@ -228,22 +230,23 @@ static int good_gid(struct gid_list *l, u_long gid)
 
 static int rxmatch(void *v, char *s, enum token token)
 {
-#ifdef WHITH_PCRE2
+#ifdef WITH_PCRE2
     int pcre_res = 0;
     pcre2_match_data *match_data = NULL;
 #endif
     switch (token) {
-#ifdef WITH_PCRE
     case S_slash:
+#ifdef WITH_PCRE
 	return -1 < pcre_exec((pcre *) v, NULL, s, strlen(s), 0, 0, NULL, 0);
 #else
-# ifdef WHITH_PCRE2
+# ifdef WITH_PCRE2
 	match_data = pcre2_match_data_create_from_pattern((pcre2_code *) v, NULL);
 	pcre_res = pcre2_match((pcre2_code *) v, (PCRE2_SPTR8) s, PCRE2_ZERO_TERMINATED, 0, 0, match_data, NULL);
 	if (pcre_res < 0 && pcre_res != PCRE2_ERROR_NOMATCH) {
 	    report_cfg_error(LOG_INFO, ~0, "PCRE2 matching error: %d", pcre_res);
 	}
 	pcre2_match_data_free(match_data);
+	return -1 < pcre_res;
 # endif
 #endif
     default:
@@ -372,5 +375,4 @@ static void mavis_drop_in(mavis_ctx * mcx)
     drop_gl(mcx->gids);
 }
 
-#define MAVIS_name "groups"
 #include "mavis_glue.c"

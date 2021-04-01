@@ -4,11 +4,11 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: libmavis_log.c,v 1.16 2015/03/14 06:11:28 marc Exp $
+ * $Id: libmavis_log.c,v 1.17 2021/03/21 08:57:21 marc Exp marc $
  *
  */
 
-#define __MAVIS_log__
+#define MAVIS_name "log"
 
 #include "misc/memops.h"
 #include "mavis.h"
@@ -17,7 +17,7 @@
 #include <string.h>
 #include <dlfcn.h>
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_log.c,v 1.16 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: libmavis_log.c,v 1.17 2021/03/21 08:57:21 marc Exp marc $";
 
 #define HAVE_mavis_parse_in
 static int mavis_parse_in(mavis_ctx * mcx, struct sym *sym)
@@ -96,5 +96,4 @@ static int mavis_recv_out(void *pcx __attribute__ ((unused)), av_ctx ** ac)
     return MAVIS_FINAL;
 }
 
-#define MAVIS_name "log"
 #include "mavis_glue.c"

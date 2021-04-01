@@ -60,4 +60,17 @@
 20201220: tac_plus/acct.c: Fix username rewriting
 20201226: tac_plus/author.c: Implement "permit if-authenticated"
 20201229: tac_plus: add documentation for "client bug" directive
+20210107: mavis/radmavis.c: Update parsing code to avoid Protocol Violation errors.
+20210107: mavis/libmavis.c: Sanitize av_set values
+20210108: Updated docs.
+20210109: tac_plus/authen.c: Abort password change for empty passwords.
+20210110: tac_plus: Implement password policy to enforce minimum password requirements.
+20210118: tac_plus/authen.c: Fix use-after-free (thanks to Dmitriy Ivanisko <ivanisko.dmitriy@gmail.com>)
+20210126: mavis/mavis_parse.c: Fix regex case handling.
+20210127: tac_plus: normalize cmd names to lower-case.
+20210318: mavis/radmavis.c: add experimental group support. Untested.
+20210319: mavis/libmavis_groups: fix PCRE2 support
+20210319: added mavis/libmavis_tacinfo_cache.c for on-disk caching
+20210320: mavis/libmavis_tacinfo_cache: minor adjustments
+20210321: mavis/libmavis_*: enhance debug output
 
