@@ -1,7 +1,7 @@
 /*
  * radmavis [group_attritute=...] authserver=localhost:1812:mysecret ...
  *
- * $Id: radmavis.c,v 1.13 2021/03/18 09:44:57 marc Exp $
+ * $Id: radmavis.c,v 1.18 2021/03/28 12:58:13 marc Exp marc $
  */
 
 #ifdef DEBUG
@@ -102,31 +102,39 @@ int main(int argc __attribute__ ((unused)), char **argv)
 		    VALUE_PAIR *r = received;
 		    while (r) {
 			if (!strcmp(r->name, group_attribute_name) || (group_attribute == r->attribute)) {
-			    if(!mc)
-				printf("%d ", AV_A_TACMEMBER);
-			    else
-				printf(",");
-			    printf("%s\n", r->strvalue);
+			    if (strncmp("CACS:", r->strvalue, 4)) {
+				if (!mc)
+				    printf("%d ", AV_A_TACMEMBER);
+				else
+				    printf(",");
+				printf("%s", r->strvalue);
+				mc++;
+			    }
 			}
 			r = r->next;
 		    }
 		    if (mc)
 			printf("\n");
 		}
-		
+
 	    } else
 		result = REJECT_RC;
 
 	    switch (result) {
 	    case OK_RC:
-		printf("%d %s\n=%d\n", AV_A_DBPASSWORD, pass, MAVIS_FINAL);
+		printf("%d 1\n", AV_A_PASSWORD_ONESHOT);
+		printf("%d %s\n", AV_A_DBPASSWORD, pass);
+		printf("%d %s\n", AV_A_RESULT, AV_V_RESULT_OK);
+		printf("=%d\n", MAVIS_FINAL);
 		break;
 	    case REJECT_RC:
+		printf("%d %s\n", AV_A_RESULT, AV_V_RESULT_FAIL);
 		printf("=%d\n", MAVIS_FINAL);
 		break;
 	    case TIMEOUT_RC:
 	    case BADRESP_RC:
 	    case ERROR_RC:
+		printf("%d %s\n", AV_A_RESULT, AV_V_RESULT_ERROR);
 		printf("=%d\n", MAVIS_TIMEOUT);
 		break;
 	    default:

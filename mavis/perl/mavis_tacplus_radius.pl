@@ -1,10 +1,10 @@
 #!/usr/bin/env perl
 #
 # mavis_tacplus_radius.pl
-# (C)2001-2011 Marc Huber <Marc.Huber@web.de>
+# (C)2001-2021 Marc Huber <Marc.Huber@web.de>
 # All rights reserved.
 #
-# $Id: mavis_tacplus_radius.pl,v 1.22 2020/03/10 17:13:35 marc Exp marc $
+# $Id: mavis_tacplus_radius.pl,v 1.27 2021/03/28 12:56:41 marc Exp marc $
 #
 # radius passwd backend for libmavis_external.so
 #
@@ -18,8 +18,9 @@
 
 my $RADIUS_HOST = 'localhost';
 my $RADIUS_SECRET = 'secret';
-my $RADIUS_GROUP_ATTR = undef;
+my $RADIUS_GROUP_ATTR = undef; # try 'Class' instead ...
 my $RADIUS_DICTIONARY = undef;
+my $RADIUS_PASSWORD_ATTR = 'User-Password'; # override this with "Password" via setenv ...
 
 my ($ACCESS_REQUEST, $ACCESS_ACCEPT);
 
@@ -37,6 +38,10 @@ print STDERR "Using ", $ACCESS_REQUEST ? "Authen::Radius" : "Authen::Simple::RAD
 $RADIUS_HOST = $ENV{'RADIUS_HOST'} if exists $ENV{'RADIUS_HOST'};
 $RADIUS_SECRET = $ENV{'RADIUS_SECRET'} if exists $ENV{'RADIUS_SECRET'};
 $RADIUS_DICTIONARY = $ENV{'RADIUS_DICTIONARY'} if exists $ENV{'RADIUS_DICTIONARY'};
+
+# It might be necessary to set RADIUS_PASSWORD_ATTR to "Password", this depends on the radius
+# dictionary used on your system. Reference: https://metacpan.org/pod/Authen::Radius
+$RADIUS_PASSWORD_ATTR = $ENV{'RADIUS_PASSWORD_ATTR'} if exists $ENV{'RADIUS_PASSWORD_ATTR'};
 
 if ($ACCESS_REQUEST) {
 	$RADIUS_GROUP_ATTR = $ENV{'RADIUS_GROUP_ATTR'} if exists $ENV{'RADIUS_GROUP_ATTR'};
@@ -73,9 +78,7 @@ sub auth($$$$) {
 		$r->clear_attributes();
 		$r->add_attributes(
 			{ Name => 'User-Name', Value => $user, Type => 'string'},
-# Reference: https://metacpan.org/pod/Authen::Radius
-# 			{ Name => 'Password', Value => $pass, Type => 'string'},
-			{ Name => 'User-Password', Value => $pass, Type => 'string'},
+ 			{ Name => $RADIUS_PASSWORD_ATTR, Value => $pass, Type => 'string'},
 			{ Name => 'NAS-IP-Address', Value => $nasip, Type => 'ipaddr'}
 		);
 		$r->send_packet($ACCESS_REQUEST);
@@ -132,11 +135,16 @@ while ($in = <>) {
 				$V[AV_A_DBPASSWORD] = $V[AV_A_PASSWORD];
 				$V[AV_A_PASSWORD_ONESHOT] = "1";
 		}
+	    $V[AV_A_TACMEMBER] = undef;
 		if (defined $RADIUS_GROUP_ATTR) {
 			for my $a ($radius->get_attributes()) {
 				if ($a->{'Name'} eq $RADIUS_GROUP_ATTR) {
-					$V[AV_A_TACPROFILE] = '{ member = ' . $a->{'Value'} . ' }';
-					last;
+					next if $a->{'Value'} ~= /^CACS:/;
+					if (defined($V[AV_A_TACMEMBER])) {
+						$V[AV_A_TACMEMBER] .= "," .$a->{'Value'};
+					} else {
+						$V[AV_A_TACMEMBER] = $a->{'Value'};
+					}
 				}
 			}
 		}

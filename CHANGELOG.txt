@@ -73,4 +73,8 @@
 20210319: added mavis/libmavis_tacinfo_cache.c for on-disk caching
 20210320: mavis/libmavis_tacinfo_cache: minor adjustments
 20210321: mavis/libmavis_*: enhance debug output
+20210328: mavis/perl/mavis_tacplus_radius.pl, mavis/radmavis: Align features, fix radmavis group attribute evaluation code (for radmavis, add "group_attribute=Class" to have attribute 25 entries mapped to TACMEMBER)
+20210328: mavis/mavis_parse.c: Use correct offsets for result pattern matching
+20210328: tac_plus: implement group ranking (yet undocumented)
+20210418: mavis/mavis_parse.c: Work around char vs. int compiler warnings
 

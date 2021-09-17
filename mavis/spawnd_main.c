@@ -2,7 +2,7 @@
  * spawnd_main.c
  * (C)2000-2011 by Marc Huber <Marc.Huber@web.de>
  *
- * $Id: spawnd_main.c,v 1.94 2020/01/18 12:57:44 marc Exp marc $
+ * $Id: spawnd_main.c,v 1.95 2021/04/18 14:26:29 marc Exp marc $
  *
  */
 
@@ -26,7 +26,7 @@
 #  include <sys/sysctl.h>
 #endif
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_main.c,v 1.94 2020/01/18 12:57:44 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: spawnd_main.c,v 1.95 2021/04/18 14:26:29 marc Exp marc $";
 
 struct spawnd_data spawnd_data;	/* configuration data */
 

@@ -4,7 +4,7 @@
  * (C)1998-2011 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: mavistest.c,v 1.25 2015/03/14 06:11:28 marc Exp $
+ * $Id: mavistest.c,v 1.27 2021/04/18 14:31:51 marc Exp marc $
  *
  */
 
@@ -21,7 +21,7 @@
 #include "mavis.h"
 #include "misc/version.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavistest.c,v 1.25 2015/03/14 06:11:28 marc Exp $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavistest.c,v 1.27 2021/04/18 14:31:51 marc Exp marc $";
 
 extern int optind, opterr;
 extern char *optarg;
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
 
     init_common_data();
 
-    while ((opt = getopt(argc, argv, optstring)) != EOF)
+    while ((opt = getopt(argc, argv, optstring)) != CHAREOF)
 	switch (opt) {
 	case 'l':
 	    loop = atoi(optarg);

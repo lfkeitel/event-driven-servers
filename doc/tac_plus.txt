@@ -2,7 +2,7 @@ TACACS+
 
 Marc Huber
 
-   $Id: manual.xml,v 1.433 2021/01/10 14:39:33 marc Exp marc $
+   $Id: manual.xml,v 1.434 2021/03/28 14:01:03 marc Exp marc $
      __________________________________________________________
 
    Table of Contents
@@ -57,7 +57,7 @@ Marc Huber
         5.2. PAM backend
         5.3. System Password Backends
         5.4. Shadow Backend
-        5.5. RADIUS Backend
+        5.5. RADIUS Backends
 
               5.5.1. Sample Configuration
 
@@ -3358,41 +3358,66 @@ test:$1$pQtQsMuj$GKpIr5r2GNaZNfDfnCBtw.:15218:1:30:
 ...
      __________________________________________________________
 
-5.5. RADIUS Backend
+5.5. RADIUS Backends
 
    mavis_tacplus_radius.pl authenticates against a RADIUS server.
    No authorization is done, unless the RADIUS_GROUP_ATTR
-   environment variable is set (see below). This may, for example,
-   be useful if you have static user account definitions in the
-   configuration file, but authentication passwords should be
-   verified by RADIUS. Use the login = mavis or password = mavis
-   statement in the user profile for this to work.
-     __________________________________________________________
-
-5.5.1. Sample Configuration
-
-mavis module = external {
-        exec = /usr/local/lib/mavis_tacplus_radius.pl
-        setenv RADIUS_HOST = 1.2.3.4:1812
-        setenv RADIUS_SECRET = "mysecret"
-        setenv RADIUS_GROUP_ATTR = Some-Radius-Attribute
-    }
+   environment variable is set (see below). This module may, for
+   example, be useful if you have static user account definitions
+   in the configuration file, but authentication passwords should
+   be verified by RADIUS. Use the login = mavis or password =
+   mavis statement in the user profile for this to work.
 
    If the Authen::Radius Perl module is installed, the value of
    the RADIUS attribute specified by RADIUS_GROUP_ATTR will be
-   used to create a TAC_PROFILE definition which uses the
-   attribute value as group membership. E.g., an attribute value
-   of Administrator would result in a
-  { member = Administrator }
+   used to create a TAC_MEMBER definition which uses the attribute
+   value as group membership. E.g., an attribute value of
+   Administrator would result in a
+  member = Administrator
 
-   profile for the authenticated user, enabling authorization and
-   omitting the need for static users in the configuration file.
+   declaration for the authenticated user, enabling authorization
+   and omitting the need for static users in the configuration
+   file.
 
-   Keep in mind that this will only work if
+   Keep in mind that authorization will only work well if either
+
+     * the tacplus_info_cachemodule is being used (it will cache
+       authentication AV pairs locally, so subsequent
+       authorizations should work fine unless you're switching to
+       a tac_plus server running elsewhere).
+
+   or
 
      * single-connection is used and
      * mavis cache timeout is set to a sufficiently high value
        that covers the user's (expected) maximum login time.
+
+   Alternatively to mavis_tacplus_radius.pl the pamradius program
+   may called by the external module. Results should be roughly
+   equivalent.
+     __________________________________________________________
+
+5.5.1. Sample Configuration
+
+## Use tacinfo_cache to cache authorization data to disk:
+mavis module = tacinfo_cache {
+    directory = /tmp/tacinfo
+}
+
+## You can use either the Perl module ...
+#mavis module = external {
+#   exec = /usr/local/lib/mavis_tacplus_radius.pl
+#   setenv RADIUS_HOST = 1.2.3.4:1812 # could add more hosts here, comma
+-separated
+#   setenv RADIUS_SECRET = "mysecret"
+#   setenv RADIUS_GROUP_ATTR = Class
+#   setenv RADIUS_PASSWORD_ATTR = Password # defaults to: User-Password
+# }
+## ... or the freeradius-client based code:
+mavis module = external {
+    exec = /usr/local/sbin/radmavis radmavis "group_attribute=Class" "au
+thserver=1.2.3.4:1812:mysecret"
+}
      __________________________________________________________
 
 5.6. Experimental Backends

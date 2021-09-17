@@ -99,7 +99,7 @@
 #include "spawnd_headers.h"
 #include "misc/strops.h"
 
-static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.180 2021/01/26 17:18:46 marc Exp marc $";
+static const char rcsid[] __attribute__ ((used)) = "$Id: mavis_parse.c,v 1.183 2021/04/18 14:31:44 marc Exp marc $";
 
 struct common_data common_data;
 
@@ -344,7 +344,7 @@ void getsym(struct sym *sym)
     while (1)
 	switch (*sym->ch) {
 	case 0:
-	case EOF:
+	case CHAREOF:
 	    sym->code = S_eof;
 	    return;
 	case '\n':
@@ -499,8 +499,8 @@ void getsym(struct sym *sym)
 		sym_start(sym);
 		sym_getchar(sym);
 		while (*sym->ch != '/') {
-		    switch (*sym->ch) {
-		    case EOF:
+		    switch (*(sym->ch)) {
+		    case CHAREOF:
 			parse_error(sym, "EOF unexpected");
 		    case '\r':
 		    case '\n':
@@ -525,8 +525,8 @@ void getsym(struct sym *sym)
 	default:
 	    sym_start(sym);
 	    while (1)
-		switch (*sym->ch) {
-		case EOF:
+		switch (*(sym->ch)) {
+		case CHAREOF:
 		case ' ':
 		case '\t':
 		case '\r':
@@ -1290,12 +1290,12 @@ void parse_debug(struct sym *sym, u_int * d)
 	    break;
 	case S_NONE:
 	    if (add) {
-	    	bit = DEBUG_NONE_FLAG;
+		bit = DEBUG_NONE_FLAG;
 		*d = 0;
 		break;
 	    } else
 		add = 1;
-		// fallthrough
+	    // fallthrough
 	case S_ALL:
 	    bit = DEBUG_ALL_FLAG;
 	    break;
@@ -2297,7 +2297,7 @@ static enum token mavis_script_eval_r(mavis_ctx * mcx, av_ctx * ac, struct mavis
 		switch (*v) {
 		case '$':
 		    v++;
-		    if (!isdigit((int) *v) || (*v == '0')) {
+		    if (!isdigit((int) *v) /* || (*v == '0') */ ) {
 			*t++ = '$';
 			break;
 		    }
@@ -2311,7 +2311,7 @@ static enum token mavis_script_eval_r(mavis_ctx * mcx, av_ctx * ac, struct mavis
 #ifdef WITH_PCRE
 		    if (pcre_arg) {
 			size_t l;
-			i--;
+			//i--;
 			l = ovector[2 * i + 1] - ovector[2 * i];
 			if (((int) (se - t) > (int) l))
 			    strncpy(t, pcre_arg + ovector[2 * i], l);
@@ -2321,7 +2321,7 @@ static enum token mavis_script_eval_r(mavis_ctx * mcx, av_ctx * ac, struct mavis
 # ifdef WITH_PCRE2
 		    if (pcre_arg) {
 			size_t l;
-			i--;
+			//i--;
 			l = ovector[2 * i + 1] - ovector[2 * i];
 			if (((int) (se - t) > (int) l))
 			    strncpy(t, (char *) pcre_arg + ovector[2 * i], l);

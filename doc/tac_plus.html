@@ -14,8 +14,8 @@
 <div class="TITLEPAGE">
 <h1 class="title"><a name="AEN2" id="AEN2">TACACS+</a></h1>
 <h3 class="author"><a name="AEN4" id="AEN4">Marc Huber</a></h3>
-<span class="releaseinfo">$Id: manual.xml,v 1.433 2021/01/10
-14:39:33 marc Exp marc $<br></span>
+<span class="releaseinfo">$Id: manual.xml,v 1.434 2021/03/28
+14:01:03 marc Exp marc $<br></span>
 <hr></div>
 <div class="TOC">
 <dl>
@@ -90,40 +90,40 @@ Realms</a></dt>
 <dt>5.2. <a href="#AEN2590">PAM backend</a></dt>
 <dt>5.3. <a href="#AEN2595">System Password Backends</a></dt>
 <dt>5.4. <a href="#AEN2603">Shadow Backend</a></dt>
-<dt>5.5. <a href="#AEN2626">RADIUS Backend</a></dt>
+<dt>5.5. <a href="#AEN2626">RADIUS Backends</a></dt>
 <dd>
 <dl>
-<dt>5.5.1. <a href="#AEN2633">Sample Configuration</a></dt>
+<dt>5.5.1. <a href="#AEN2656">Sample Configuration</a></dt>
 </dl>
 </dd>
-<dt>5.6. <a href="#AEN2651">Experimental Backends</a></dt>
-<dt>5.7. <a href="#AEN2655">Error Handling</a></dt>
+<dt>5.6. <a href="#AEN2659">Experimental Backends</a></dt>
+<dt>5.7. <a href="#AEN2663">Error Handling</a></dt>
 </dl>
 </dd>
-<dt>6. <a href="#AEN2663">Debugging</a></dt>
+<dt>6. <a href="#AEN2671">Debugging</a></dt>
 <dd>
 <dl>
-<dt>6.1. <a href="#AEN2666">Debugging Configuration Files</a></dt>
-<dt>6.2. <a href="#AEN2674">Trace Options</a></dt>
+<dt>6.1. <a href="#AEN2674">Debugging Configuration Files</a></dt>
+<dt>6.2. <a href="#AEN2682">Trace Options</a></dt>
 </dl>
 </dd>
-<dt>7. <a href="#AEN2832">Frequently Asked Questions</a></dt>
-<dt>8. <a href="#AEN3078">Canned Configurations</a></dt>
+<dt>7. <a href="#AEN2840">Frequently Asked Questions</a></dt>
+<dt>8. <a href="#AEN3086">Canned Configurations</a></dt>
 <dd>
 <dl>
-<dt>8.1. <a href="#AEN3081">Login Authentication</a></dt>
-<dt>8.2. <a href="#AEN3092">Command Authorization</a></dt>
-<dt>8.3. <a href="#AEN3106">Network Access Authorization</a></dt>
-<dt>8.4. <a href="#AEN3119">ARAP</a></dt>
-<dt>8.5. <a href="#AEN3127">Callback</a></dt>
+<dt>8.1. <a href="#AEN3089">Login Authentication</a></dt>
+<dt>8.2. <a href="#AEN3100">Command Authorization</a></dt>
+<dt>8.3. <a href="#AEN3114">Network Access Authorization</a></dt>
+<dt>8.4. <a href="#AEN3127">ARAP</a></dt>
+<dt>8.5. <a href="#AEN3135">Callback</a></dt>
 </dl>
 </dd>
-<dt>9. <a href="#AEN3141">Authorization AV pairs</a></dt>
-<dt>10. <a href="#AEN3556">Upgrading from Previous
+<dt>9. <a href="#AEN3149">Authorization AV pairs</a></dt>
+<dt>10. <a href="#AEN3564">Upgrading from Previous
 Releases</a></dt>
-<dt>11. <a href="#AEN3572">Bugs</a></dt>
-<dt>12. <a href="#AEN3586">References</a></dt>
-<dt>13. <a href="#AEN3596">Copyrights and Acknowledgements</a></dt>
+<dt>11. <a href="#AEN3580">Bugs</a></dt>
+<dt>12. <a href="#AEN3594">References</a></dt>
+<dt>13. <a href="#AEN3604">Copyrights and Acknowledgements</a></dt>
 </dl>
 </div>
 <div class="section">
@@ -4546,36 +4546,35 @@ test:$1$pQtQsMuj$GKpIr5r2GNaZNfDfnCBtw.:15218:1:30:
 <div class="section">
 <hr>
 <h3 class="section"><a name="AEN2626" id="AEN2626">5.5. RADIUS
-Backend</a></h3>
+Backends</a></h3>
 <p><tt class="literal">mavis_tacplus_radius.pl</tt> authenticates
 against a RADIUS server. No authorization is done, unless the
 <tt class="literal">RADIUS_GROUP_ATTR</tt> environment variable is
-set (see below). This may, for example, be useful if you have
-static user account definitions in the configuration file, but
+set (see below). This module may, for example, be useful if you
+have static user account definitions in the configuration file, but
 authentication passwords should be verified by RADIUS. Use the
 <tt class="literal">login = mavis</tt> or <tt class=
 "literal">password = mavis</tt> statement in the user profile for
 this to work.</p>
-<div class="section">
-<hr>
-<h4 class="section"><a name="AEN2633" id="AEN2633">5.5.1. Sample
-Configuration</a></h4>
-<pre class="screen">mavis module = external {
-        exec = /usr/local/lib/mavis_tacplus_radius.pl
-        setenv RADIUS_HOST = 1.2.3.4:1812
-        setenv RADIUS_SECRET = "mysecret"
-        setenv RADIUS_GROUP_ATTR = Some-Radius-Attribute
-    }</pre>
 <p>If the <tt class="literal">Authen::Radius</tt> Perl module is
 installed, the value of the RADIUS attribute specified by
 <tt class="literal">RADIUS_GROUP_ATTR</tt> will be used to create a
-<tt class="literal">TAC_PROFILE</tt> definition which uses the
+<tt class="literal">TAC_MEMBER</tt> definition which uses the
 attribute value as group membership. E.g., an attribute value of
 <tt class="literal">Administrator</tt> would result in a</p>
-<pre class="screen">  { member = Administrator }</pre>
-<p>profile for the authenticated user, enabling authorization and
-omitting the need for static users in the configuration file.</p>
-<p>Keep in mind that this will only work if</p>
+<pre class="screen">  member = Administrator</pre>
+<p>declaration for the authenticated user, enabling authorization
+and omitting the need for static users in the configuration
+file.</p>
+<p>Keep in mind that authorization will only work well if
+either</p>
+<ul>
+<li>the <tt class="literal">tacplus_info_cache</tt>module is being
+used (it will cache authentication AV pairs locally, so subsequent
+authorizations should work fine unless you're switching to a
+tac_plus server running elsewhere).</li>
+</ul>
+<p>or</p>
 <ul>
 <li>
 <p><tt class="literal">single-connection</tt> is used and</p>
@@ -4586,18 +4585,44 @@ sufficiently high value that covers the user's (expected) maximum
 login time.</p>
 </li>
 </ul>
-</div>
+<p>Alternatively to <tt class=
+"literal">mavis_tacplus_radius.pl</tt> the <tt class=
+"literal">pamradius</tt> program may called by the <tt class=
+"literal">external</tt> module. Results should be roughly
+equivalent.</p>
+<div class="section">
+<hr>
+<h4 class="section"><a name="AEN2656" id="AEN2656">5.5.1. Sample
+Configuration</a></h4>
+<pre class="screen">
+## Use tacinfo_cache to cache authorization data to disk:
+mavis module = tacinfo_cache {
+    directory = /tmp/tacinfo
+}
+
+## You can use either the Perl module ...
+#mavis module = external {
+#   exec = /usr/local/lib/mavis_tacplus_radius.pl
+#   setenv RADIUS_HOST = 1.2.3.4:1812 # could add more hosts here, comma-separated
+#   setenv RADIUS_SECRET = "mysecret"
+#   setenv RADIUS_GROUP_ATTR = Class
+#   setenv RADIUS_PASSWORD_ATTR = Password # defaults to: User-Password
+# }
+## ... or the freeradius-client based code:
+mavis module = external {
+    exec = /usr/local/sbin/radmavis radmavis "group_attribute=Class" "authserver=1.2.3.4:1812:mysecret"
+}</pre></div>
 </div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2651" id="AEN2651">5.6.
+<h3 class="section"><a name="AEN2659" id="AEN2659">5.6.
 Experimental Backends</a></h3>
 <p><tt class="literal">mavis_tacplus_sms.pl</tt> is a sample
 (skeleton) script to send One-Time Passwords via a SMS backend.</p>
 </div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2655" id="AEN2655">5.7. Error
+<h3 class="section"><a name="AEN2663" id="AEN2663">5.7. Error
 Handling</a></h3>
 <p>If a backend script fails due to an external problem (e.g. LDAP
 server unavailability), your router may or may not fall back to
@@ -4634,11 +4659,11 @@ basis. Default is enabled.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN2663" id="AEN2663">6.
+<h2 class="section"><a name="AEN2671" id="AEN2671">6.
 Debugging</a></h2>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2666" id="AEN2666">6.1. Debugging
+<h3 class="section"><a name="AEN2674" id="AEN2674">6.1. Debugging
 Configuration Files</a></h3>
 <p>When creating configuration files, it is convenient to check
 their syntax using the <tt class="literal">-P</tt> flag to
@@ -4650,7 +4675,7 @@ messages on the terminal.</p>
 </div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN2674" id="AEN2674">6.2. Trace
+<h3 class="section"><a name="AEN2682" id="AEN2682">6.2. Trace
 Options</a></h3>
 <p>Trace (or debugging) options may be specified in <span class=
 "emphasis"><i class="emphasis">global</i></span>, <span class=
@@ -4676,7 +4701,7 @@ information to <tt class="literal">syslog</tt>.</p>
 <pre class="screen">debug = ALL -PARSE</pre>
 <p>The debugging options available are summarized in the following
 table:</p>
-<div class="informaltable"><a name="AEN2694" id="AEN2694"></a>
+<div class="informaltable"><a name="AEN2702" id="AEN2702"></a>
 <table border="1" frame="border" class="CALSTABLE">
 <col width="5%" title="col1">
 <col width="15%" title="col2">
@@ -4863,7 +4888,7 @@ option.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN2832" id="AEN2832">7. Frequently
+<h2 class="section"><a name="AEN2840" id="AEN2840">7. Frequently
 Asked Questions</a></h2>
 <ul>
 <li>
@@ -5224,7 +5249,7 @@ authorization and accounting.</p>
 <p>vpdn specific information includes the attributes <tt class=
 "literal">tunnel-id</tt>, <tt class="literal">source-ip</tt>
 (deprecated) and <tt class="literal">ip-addresses</tt>:</p>
-<div class="informaltable"><a name="AEN3019" id="AEN3019"></a>
+<div class="informaltable"><a name="AEN3027" id="AEN3027"></a>
 <table border="1" class="CALSTABLE">
 <col>
 <col>
@@ -5350,13 +5375,13 @@ keyword in place of the <tt class="literal">chap</tt> keyword.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3078" id="AEN3078">8. Canned
+<h2 class="section"><a name="AEN3086" id="AEN3086">8. Canned
 Configurations</a></h2>
 <p>Here are some canned configurations for getting demos
 started:</p>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3081" id="AEN3081">8.1. Login
+<h3 class="section"><a name="AEN3089" id="AEN3089">8.1. Login
 Authentication</a></h3>
 <p>A canned configuration for login authentication only. This
 allows user <tt class="literal">fred</tt> to login with password
@@ -5381,7 +5406,7 @@ tacacs-server host ...
 tacacs-server key some key</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3092" id="AEN3092">8.2. Command
+<h3 class="section"><a name="AEN3100" id="AEN3100">8.2. Command
 Authorization</a></h3>
 <p>This will allow user <tt class="literal">fred</tt> to login with
 password <tt class="literal">abcdef</tt> and to run the privileged
@@ -5414,7 +5439,7 @@ tacacs-server host 10.1.1.1
 tacacs-server key some key</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3106" id="AEN3106">8.3. Network
+<h3 class="section"><a name="AEN3114" id="AEN3114">8.3. Network
 Access Authorization</a></h3>
 <p>This config allows <tt class="literal">fred</tt> to login to
 <tt class="literal">line 1</tt> with password <tt class=
@@ -5457,7 +5482,7 @@ line 1
 ! need "modem inout" here and flow control if using a modem</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3119" id="AEN3119">8.4.
+<h3 class="section"><a name="AEN3127" id="AEN3127">8.4.
 ARAP</a></h3>
 <p><span class="bold"><b class="emphasis">Daemon:</b></span></p>
 <pre class="screen">id = spawnd {
@@ -5498,7 +5523,7 @@ line 1
   flowcontrol hardware</pre></div>
 <div class="section">
 <hr>
-<h3 class="section"><a name="AEN3127" id="AEN3127">8.5.
+<h3 class="section"><a name="AEN3135" id="AEN3135">8.5.
 Callback</a></h3>
 <div class="note">
 <table class="note" width="100%" border="0">
@@ -5586,7 +5611,7 @@ int async 6
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3141" id="AEN3141">9. Authorization
+<h2 class="section"><a name="AEN3149" id="AEN3149">9. Authorization
 AV pairs</a></h2>
 <p>The following authorization AV pairs specify which service is
 being authorized and are typically accompanied by protocol AV pairs
@@ -6267,7 +6292,7 @@ debug multilink
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3556" id="AEN3556">10. Upgrading
+<h2 class="section"><a name="AEN3564" id="AEN3564">10. Upgrading
 from Previous Releases</a></h2>
 <p>There may be some caveats to consider if you're using a previous
 version of the software:</p>
@@ -6292,7 +6317,7 @@ requiring the environmental variable <tt class=
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3572" id="AEN3572">11.
+<h2 class="section"><a name="AEN3580" id="AEN3580">11.
 Bugs</a></h2>
 <ul>
 <li>
@@ -6321,7 +6346,7 @@ guidance.</p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3586" id="AEN3586">12.
+<h2 class="section"><a name="AEN3594" id="AEN3594">12.
 References</a></h2>
 <ul>
 <li>
@@ -6338,7 +6363,7 @@ System Plus (TACACS+) Protocol</a></p>
 </div>
 <div class="section">
 <hr>
-<h2 class="section"><a name="AEN3596" id="AEN3596">13. Copyrights
+<h2 class="section"><a name="AEN3604" id="AEN3604">13. Copyrights
 and Acknowledgements</a></h2>
 <p>Please see the source for copyright and licensing information of
 individual files.</p>
@@ -6420,7 +6445,7 @@ with the distribution.</p>
 <li>
 <p>The end-user documentation included with the redistribution, if
 any, must include the following acknowledgment:</p>
-<a name="AEN3639" id="AEN3639"></a>
+<a name="AEN3647" id="AEN3647"></a>
 <blockquote class="BLOCKQUOTE">
 <p>This product includes software developed by Marc Huber
 (<code class="email">&lt;<a href=

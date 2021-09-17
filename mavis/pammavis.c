@@ -1,7 +1,7 @@
 /*
  * pammavis [ -s service ]
  *
- * $Id: pammavis.c,v 1.26 2020/04/22 15:55:56 marc Exp marc $
+ * $Id: pammavis.c,v 1.26 2020/04/22 15:55:56 marc Exp $
  */
 
 #include "misc/sysconf.h"

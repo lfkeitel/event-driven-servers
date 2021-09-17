@@ -3,7 +3,7 @@
  * (C)1998-2015 by Marc Huber <Marc.Huber@web.de>
  * All rights reserved.
  *
- * $Id: mavis.h,v 1.83 2021/03/21 09:18:26 marc Exp marc $
+ * $Id: mavis.h,v 1.85 2021/04/18 14:31:39 marc Exp marc $
  *
  */
 
@@ -314,6 +314,7 @@ enum token sym_peek(struct sym *);
 void cfg_read_config(char *, void (*)(struct sym *), char *);
 enum token keycode(char *);
 int parse_int(struct sym *);
+u_int parse_uint(struct sym *);
 int parse_seconds(struct sym *);
 void sym_init(struct sym *);
 void report_cfg_error(int, int, char *, ...)
@@ -439,5 +440,7 @@ void mavis_detach(void);
 #  define DebugIn(A) Debug  ((A, "+ "MAVIS_name":%s\n", __func__))
 #  define DebugOut(A) Debug ((A, "- "MAVIS_name":%s\n", __func__))
 #endif
+
+#define CHAREOF (char)EOF
 
 #endif				/* __MAVIS_H_ */
